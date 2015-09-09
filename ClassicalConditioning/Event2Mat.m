@@ -4,13 +4,13 @@ function Event2Mat(sessionFolder)
 % 주어진 sessionFolder 안에 있는 nev file의 목록을 만든다
 narginchk(0, 1);
 if nargin == 0
-    eventFiles = FindFiles('*.nev','CheckSubdirs',0);
+    eventFiles = FindFiles('Events.nev','CheckSubdirs',0);
 elseif nargin == 1
     if ~iscell(sessionFolder)
         disp('Input argument is wrong. It should be cell array.');
         return;
     elseif isempty(sessionFolder)
-        eventFiles = FindFiles('*.nev','CheckSubdirs',0);
+        eventFiles = FindFiles('Events.nev','CheckSubdirs',0);
     else
         nFolder = length(sessionFolder);
         eventFiles = cell(0,1);
@@ -35,66 +35,70 @@ for iFile = 1:nFile
     [timeStamp, eventString] = Nlx2MatEV(eventFiles{iFile}, [1 0 0 0 1], 0, 1, []);
     timeStamp = timeStamp'/1000; % unit: msec
     
-    % Epoch
+    % epoch
     recStart = find(strcmp(eventString,'Starting Recording'));
     recEnd = find(strcmp(eventString,'Stopping Recording'));
     baseTime = timeStamp([recStart(1),recEnd(1)]);
     taskTime = timeStamp([recStart(2),recEnd(2)]);
     
-    % Task
-    trialOnsetIndex = strncmp(eventString, 'Cue', 3);
-    trialOffsetIndex = strcmp(eventString, 'Baseline');
-    rewardIndex = strcmp(eventString, 'Reward') | strcmp(eventString, 'Non-reward');
-    offsetTemp = find(strncmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 2', 40));
-    offsetIndex = reshape(offsetTemp(1:(end-1)), 3, []);
+    % lick time
+    lickITIThreshold = 1000/20; % 20 Hz (50 ms)보다 높으면 제거
     lickOnsetIndex = strcmp(eventString, 'Sensor');
-    lickOffsetIndex = strncmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 3', 40);
-    blueOnsetIndex = strcmp(eventString, 'Blue');
-    redOnsetIndex = strcmp(eventString, 'Red');
-    lightOffsetIndex = strncmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 1', 40);
-    
-    nTrial = sum(trialOnsetIndex);
-    
-    trialOnsetTime = timeStamp(trialOnsetIndex);
-    cueOnsetTime = timeStamp(offsetIndex(1,:));
-    delayOnsetTime = timeStamp(offsetIndex(2,:));
-    rewardOnsetTime = timeStamp(rewardIndex);
-    rewardOffsetTime = timeStamp(offsetIndex(3,:));
     lickOnsetTime = timeStamp(lickOnsetIndex);
-    lickOffsetTime = timeStamp(lickOffsetIndex);
-    trialTime = timeStamp(trialOffsetIndex);
-    blueOnsetTime = timeStamp(blueOnsetIndex);
-    redOnsetTime = timeStamp(redOnsetIndex);
-    lightOffsetTime = timeStamp(lightOffsetIndex);
+    lickOut = [false; (diff(lickOnsetTime(:,1)) < lickITIThreshold)];
+    lickOnsetTime(lickOut,:) = [];
     
-    cue = cellfun(@(x) str2num(x(4)), eventString(trialOnsetIndex), 'UniformOutput', true);
-    reward = strcmp(eventString(rewardIndex), 'Reward');
+    % trial
+    trialOffsetIndex = find(strcmp(eventString, 'Baseline'));
+    nTrial = length(trialOffsetIndex) - 1;
     
-    cueA = cue==1;
-    cueB = cue==2;
-    cueC = cue==3;
-    cueD = cue==4;
+    eventTime = NaN(nTrial, 6);
+    cue = NaN(nTrial, 1);
+    reward = NaN(nTrial, 1);
+    modulation = NaN(nTrial, 1);
+    for iTrial = 1:nTrial
+        inTrial = (timeStamp>=timeStamp(trialOffsetIndex(iTrial)) & timeStamp<timeStamp(trialOffsetIndex(iTrial+1)));
         
-    cueA_reward = (cue==1) & (reward==1);
-    cueB_reward = (cue==2) & (reward==1);
-    cueC_reward = (cue==3) & (reward==1);
-    cueD_reward = (cue==4) & (reward==1);
-    cueA_nonreward = (cue==1) & (reward==0);
-    cueB_nonreward = (cue==2) & (reward==0);
-    cueC_nonreward = (cue==3) & (reward==0);
-    cueD_nonreward = (cue==4) & (reward==0);
+        trialOnsetIndex = strncmp(eventString, 'Cue', 3) & inTrial;
+        offsetTemp = find(strncmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 2', 40) & inTrial);
+        rewardIndex = (strcmp(eventString, 'Reward') | strcmp(eventString, 'Non-reward')) & inTrial;
+        modulationIndex = strcmp(eventString, 'Red') & inTrial;
+        
+        if length(offsetTemp)~=3; continue; end;
+        if ~any(trialOnsetIndex); continue; end;
+        if ~any(rewardIndex); continue; end;
+        eventTime(iTrial,1) = timeStamp(trialOnsetIndex);
+        eventTime(iTrial, [2:3 5]) = timeStamp(offsetTemp);
+        eventTime(iTrial,4) = timeStamp(rewardIndex);
+        eventTime(iTrial,6) = timeStamp(trialOffsetIndex(iTrial+1));
+        
+        cue(iTrial) = str2double(eventString{trialOnsetIndex}(4));
+        modulation(iTrial) = any(modulationIndex);
+        reward(iTrial) = any(strcmp(eventString, 'Reward') & inTrial);
+    end
+    eventTime(isnan(eventTime(:,1)),:) = [];
+    nTrial = size(eventTime,1);
     
-    cueIndex = [cueA, cueB, cueC, cueD];
+    % trial summary
+    trialIndex = false(nTrial,16);
+    cueIndex = false(nTrial,4);
+    for iCue = 1:4
+        cueIndex(:,iCue) = cue==iCue;
+        for iReward = 1:2
+            for iModulation = 1:2
+                iCol = (iCue-1)*4 + (iReward-1)*2 + iModulation;
+                trialIndex(:,iCol) = (cue==iCue) & (reward==(2-iReward)) & (modulation==(iModulation-1));
+            end
+        end
+    end
+    
     cueResult = sum(cueIndex);
-    trialIndex = [cueA_reward, cueA_nonreward, cueB_reward, cueB_nonreward, ...
-        cueC_reward, cueC_nonreward, cueD_reward, cueD_nonreward];
-    eventTime = [trialOnsetTime, cueOnsetTime, delayOnsetTime, rewardOnsetTime];
     trialResult = sum(trialIndex);
     
     % find first lick time
     rewardCheckingTime = zeros(nTrial,1);
     for iTrial = 1:nTrial
-        rewardTempTime = find(lickOnsetTime>=rewardOnsetTime(iTrial) & lickOnsetTime<trialTime(iTrial+1),1,'first');
+        rewardTempTime = find(lickOnsetTime>=eventTime(iTrial,4) & lickOnsetTime<eventTime(iTrial,6),1,'first');
         if ~isempty(rewardTempTime)
             rewardCheckingTime(iTrial) = timeStamp(rewardTempTime);
         else
@@ -102,32 +106,18 @@ for iFile = 1:nFile
         end
     end
     
-    % licking rate histogram
-    binSize = 0.01; % unit: second;
-    lickBin = (0:binSize:8);
-    lickHist = zeros(nTrial,length(lickBin));
-    resolution = 10;
-    for iTrial = 1:nTrial
-        lickHist(iTrial,:) = histc(lickOnsetTime, trialTime(iTrial) + lickBin*1000000)/binSize;
-    end
-    
-    lickMeanConv = zeros(4, length(lickBin));
-    lickPSTHSem = zeros(4, length(lickBin));
-    for iType = 1:4
-        lickMean = mean(lickHist(cueIndex(:,iType),:));
-        lickSem = std(lickHist(cueIndex(:,iType),:))/sqrt(cueResult(iType));
-        lickMeanConv(iType,:) = conv(lickMean, fspecial('Gaussian', [1 5*resolution],resolution), 'same');
-        lickSemConv(iType,:) = conv(lickSem, fspecial('Gaussian', [1 5*resolution],resolution), 'same');
-    end
-    
-    lickSemBin = [lickBin flip(lickBin)];
-    lickSemConv = [lickMeanConv-lickSemConv flip(lickMeanConv+lickSemConv,2)];
+    % tagging
+    tagIndex = timeStamp > taskTime(2);
+    blueOnsetIndex = strcmp(eventString, 'Blue') & tagIndex;
+    redOnsetIndex = strcmp(eventString, 'Red') & tagIndex;
+    blueOnsetTime = timeStamp(blueOnsetIndex);
+    redOnsetTime = timeStamp(redOnsetIndex);
     
     save('Events.mat', ...
-        'nTrial', 'trialIndex', 'eventTime', 'trialTime', 'trialResult', ...
-        'baseTime', 'taskTime', 'cueIndex', 'cueResult', ...
-        'cue', 'reward', 'lickOnsetTime','lickOffsetTime', 'rewardCheckingTime', ...
-        'blueOnsetTime', 'redOnsetTime', 'lightOffsetTime', ...
-        'lickBin','lickMeanConv','lickSemBin','lickSemConv');   
+        'baseTime', 'taskTime', ...
+        'lickOnsetTime', ...
+        'nTrial', 'cue', 'reward', 'modulation', ...
+        'eventTime', 'trialIndex', 'cueIndex', 'cueResult', 'trialResult', 'rewardCheckingTime', ...
+        'blueOnsetTime', 'redOnsetTime');   
 end
 disp('Done!');
