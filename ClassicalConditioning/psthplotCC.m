@@ -16,12 +16,15 @@ win = [-20 100]; % Tagging period
 p_value = 0.05; % Threshold for tagging
 
 % Plot properties
-lineclr={[0.8 0 0], [0.8 0.4 0], ...
-        [0 0 0.8], [0 0.4 0.8], ...
-        [1 0.8125 0], [1 0.8125 0], ...
-        [0 0.8125 1], [0 0.8125 1]};
-linewth=[2 1 2 1 2 1 2 1];
-linestl={'-','-','-','-','-','-','-','-'};
+lineClr = {[0.8 0 0], [1 0.6 0.6], [1 0.6 0], [1 1 0.4], ...
+        [0 0 0.8], [0.6 0.6 1], [0 0.6 1], [0.4 1 1], ...
+        [1 0.6 0], [1 1 0.4], [1 0.6 0], [1 1 0.4], ...
+        [0 0.6 1], [0.4 1 1], [0 0.6 1], [0.4 1 1]};
+lineStl = {'-', '-', '-', '-', ...
+    '-', '-', '-', '-', ...
+    '-', '-', '-', '-', ...
+    '-', '-', '-', '-'};
+lineWth = [1 0.5 1 0.5 1 0.5 1 0.5 1 0.5 0.5 0.5 1 0.5 0.5 0.5];
 
 % Find files
 switch nargin
@@ -88,12 +91,13 @@ for iFiles = 1:nFiles
 % Raster
     axes('Position',axpt(mod(iFiles-1,nRow)+1,1,:)); % Raster
     hold on;
-    plot([0.5 0.5],[0.01 nTrial],'LineStyle','-','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([1.5 1.5],[0.01 nTrial],'LineStyle','-','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([4 4],[0.01 nTrial],'LineStyle','-','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
+    plot([0 0],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
+    plot([0.5 0.5],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
+    plot([1.5 1.5],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
+    plot([4 4],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
     for iChoice = find(trialResult~=0)
         plot(xpt{iChoice},ypt{iChoice},...
-            'LineStyle','-','LineWidth',0.2,'Color',lineclr{iChoice});
+            'LineStyle','-','LineWidth',0.2,'Color',lineClr{iChoice});
     end
     set(gca,'box','off','TickDir','out','LineWidth',0.2,'FontSize',4, ...
         'XLim',window,'XTick',[], ...
@@ -103,27 +107,25 @@ for iFiles = 1:nFiles
 % PETH
     axes('Position',axpt(mod(iFiles-1,nRow)+1,2,:)); % PSTH
     hold on;
-    plot([0.5 0.5],[0.01 nTrial],'LineStyle','-','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([1.5 1.5],[0.01 nTrial],'LineStyle','-','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([4 4],[0.01 nTrial],'LineStyle','-','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
+    plot([0 0],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
+    plot([0.5 0.5],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
+    plot([1.5 1.5],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
+    plot([4 4],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
+    ylims = ceil(max(pethconv(:))*1.1);
+    rectangle('Position', [0.5 ylims*0.95 1 ylims*0.05], 'LineStyle', 'none', 'FaceColor', [1 0.8 0]);
+    rectangle('Position', [4 ylims*0.95 0.1 ylims*0.05], 'LineStyle', 'none', 'FaceColor', [0 0.6 1]);
     for jChoice = find(trialResult~=0)
         plot(spikeBin,pethconv(jChoice,:),...
-            'LineStyle',linestl{jChoice},'LineWidth',linewth(jChoice),'Color',lineclr{jChoice});
+            'LineStyle',lineStl{jChoice},'LineWidth',lineWth(jChoice),'Color',lineClr{jChoice});
         
     end
-    ylims = ceil(max(pethconv(:))*1.1);
     set(gca,'box','off','TickDir','out','LineWidth',0.2,'FontSize',4, ...
-        'XLim',window, 'XTick',[0 0.5 1.5 4 8], ...
+        'XLim',window, 'XTick',[0 0.5 1.5 4 7], 'XTickLabel', {-0.5,0, 1, 3.5, 7}, ...
         'YLim',[0 ylims], 'YTick',[0 ylims], 'YTickLabel',{'     ',ylims});
     if (mod(iFiles,nRow)==0 | iFiles == nFiles)
-                xlabel('Time (s)','FontSize',5);
+                xlabel('Time from cue onset (s)','FontSize',5);
             end
     ylabel('Rate (Hz)','FontSize',4);
-
-% File name
-axes('Position',[axpt(1,2,1) axpt(mod(iFiles-1,nRow)+1,2,2)-0.03 0.4 0.1])
-text(0,0,matFile{iFiles},'FontSize',4,'interpreter','none');
-set(gca,'Visible','off');
 
 %% Tagging
     clear xpttag ypttag bintag taghist time_tagstat H1_tagstat H2_tagstat p_tagstat;
@@ -205,9 +207,14 @@ set(gca,'Visible','off');
          text(0,0.3,['Peak valley ratio: ',num2str(spkpvr,3)],'FontSize',4,'interpreter','none');
          set(gca,'visible','off');
        
-%% Title and save image        
+%% Title and save image 
+    % File name
+    axes('Position',[axpt(mod(iFiles-1,nRow)+1,1,1)-0.35 axpt(mod(iFiles-1,nRow)+1,1,2)+dy+0.008 dx 0.05]);
+    text(0,0,matFile{iFiles},'FontSize',4,'interpreter','none');
+    set(gca,'Visible','off');
+    
     if (mod(iFiles,nRow)==0 | iFiles == nFiles)
-        axes('Position',[axpt(1,1,1) axpt(1,1,2)+dy+0.006 dx 0.05]);
+        axes('Position',[axpt(1,1,1)+0.03 axpt(1,1,2)+dy+0.008 dx 0.05]);
             text(0.25,0,'Preparation','FontSize',4,'interpreter','none','HorizontalAlignment','center');
             text(1,0,'Cue','FontSize',4,'interpreter','none','HorizontalAlignment','center');
             text(2.75,0,'Delay','FontSize',4,'interpreter','none','HorizontalAlignment','center');

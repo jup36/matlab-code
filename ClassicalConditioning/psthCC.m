@@ -2,8 +2,8 @@ function psthCC(sessionFolder)
 % psthCC Converts data from MClust t files to Matlab mat files
 
 % Task variables
-win = [-1 9]*10^3; % unit: msec, window for binning
-window = [0 8]; % unit: sec, final view window
+win = [-1 7.5]*10^3; % unit: msec, window for binning
+window = [-0.5 7]; % unit: sec, final view window
 binSize = 0.01; % unit: sec, = 10 msec
 resolution = 10; % sigma = resolution * binSize = 100 msec
 
