@@ -1,39 +1,48 @@
-function psthCC(sessionFolder)
+function psthCC(sessionFolder,includeAllTrial)
 % psthCC Converts data from MClust t files to Matlab mat files
+narginchk(0, 2);
 
 % Task variables
-win = [-1 7.5]*10^3; % unit: msec, window for binning
-window = [-0.5 7]; % unit: sec, final view window
 binSize = 0.01; % unit: sec, = 10 msec
 resolution = 10; % sigma = resolution * binSize = 100 msec
+rewardWin = [-2 4]*10^3;
+rewardWindow = [-1 3];
 
 % Tag variables
-winTag = [-20 100]; % unit: msec
-binTagSize = 2;
-binTag = winTag(1):binTagSize:winTag(2);
+winTagBlue = [-20 100]; % unit: msec
+binTagSizeBlue = 2;
+binTagBlue = winTagBlue(1):binTagSizeBlue:winTagBlue(2);
+
+winTagRed = [-500 2000]; % unit: msec
+binTagSizeRed = 10;
+binTagRed = winTagRed(1):binTagSizeRed:winTagRed(2);
 
 % Find files
-switch nargin
-    case 0 % Input이 없는 경우 그냥 폴더안의 t 파일을 검색
-        ttFile = FindFiles('T*.t','CheckSubdirs',0); % Subfolder는 검색하지 않는다
-    case 1 % Input이 있는 경우
-        if ~iscell(sessionFolder) % 셀 array인지 확인
-            disp('Input argument is wrong. It should be cell array.');
-            return;
-        elseif isempty(sessionFolder) % Cell이 맞지만 텅 비었으면 그냥 폴더 안의 t파일 검색
-            ttFile = FindFiles('T*.t','CheckSubdirs',1);
-        else % Cell이 맞고 빈 array가 아니면, 차례대로 cell 내용물 확인
-            nFolder = length(sessionFolder);
-            ttFile = cell(0,1);
-            for iFolder = 1:nFolder
-                if exist(sessionFolder{iFolder})==7 % 폴더이면 그 아래 폴더들의 t파일 검색
-                    cd(sessionFolder{iFolder});
-                    ttFile = [ttFile;FindFiles('T*.t','CheckSubdirs',1)];
-                elseif strcmp(sessionFolder{iFolder}(end-1:end),'.t') % t파일이면 바로 합친다.
-                    ttFile = [ttFile;sessionFolder{iFolder}];
-                end
+if nargin == 0 % Input이 없는 경우 그냥 폴더안의 t 파일을 검색
+    ttFile = FindFiles('T*.t','CheckSubdirs',0); % Subfolder는 검색하지 않는다
+else % Input이 있는 경우
+    if ~iscell(sessionFolder) % 셀 array인지 확인
+        disp('Input argument is wrong. It should be cell array.');
+        return;
+    elseif isempty(sessionFolder) % Cell이 맞지만 텅 비었으면 그냥 폴더 안의 t파일 검색
+        ttFile = FindFiles('T*.t','CheckSubdirs',1);
+    else % Cell이 맞고 빈 array가 아니면, 차례대로 cell 내용물 확인
+        nFolder = length(sessionFolder);
+        ttFile = cell(0,1);
+        for iFolder = 1:nFolder
+            if exist(sessionFolder{iFolder})==7 % 폴더이면 그 아래 폴더들의 t파일 검색
+                cd(sessionFolder{iFolder});
+                ttFile = [ttFile;FindFiles('T*.t','CheckSubdirs',1)];
+            elseif strcmp(sessionFolder{iFolder}(end-1:end),'.t') % t파일이면 바로 합친다.
+                ttFile = [ttFile;sessionFolder{iFolder}];
             end
         end
+    end
+end
+if nargin == 2
+    includeAllTrial = logical(includeAllTrial);
+else
+    includeAllTrial = false;
 end
 if isempty(ttFile)
     disp('TT file does not exist!');
@@ -48,12 +57,20 @@ for iCell = 1:nCell
     cd(cellPath);
 
     % Event variables
-    load('Events.mat');
+    if includeAllTrial
+        load('Events.mat');
+    else
+        load('EventsValid.mat');
+    end
+    win = [-1 maxTrialDuration]*10^3; % unit: msec, window for binning
+    window = [-0.5 maxTrialDuration-0.5]; % unit: sec, final view window
+    
     yTemp = [0:nTrial-1; 1:nTrial; NaN(1,nTrial)]; % ypt 만들 때 사용
     resultSum = [0 cumsum(trialResult)];
     
     spikeData = Data(ttData{iCell})/10; % unit: msec
     spikeTime = cell(nTrial,1);
+    spikeTimeAfterReward = cell(nTrial,1);
     
     % Firing rate
     fr_base = sum(histc(spikeData,baseTime))/diff(baseTime/1000);
@@ -66,6 +83,11 @@ for iCell = 1:nCell
         [~,timeIndex] = histc(spikeData,eventTime(iTrial,1)+win);
         if isempty(timeIndex); continue; end;
         spikeTime{iTrial} = spikeData(logical(timeIndex))-eventTime(iTrial,1);
+        
+        % raster for time from reward licking
+        [~,timeRewardIndex] = histc(spikeData,rewardLickTime(iTrial)+rewardWin);
+        if isempty(timeRewardIndex); continue; end;
+        spikeTimeAfterReward{iTrial} = spikeData(logical(timeRewardIndex)) - rewardLickTime(iTrial);
     end
 
     % Making raster points
@@ -80,13 +102,26 @@ for iCell = 1:nCell
     ypt = cell(1,nCue);
     spikeHist = zeros(nCue,nSpikeBin);
     spikeConv = zeros(nCue,nSpikeBin);
+    
+    xptReward = cell(1,nCue);
+    yptReward = cell(1,nCue);
+    spikeRewardHist = zeros(nCue,nSpikeBin);
+    spikeRewardConv = zeros(nCue,nSpikeBin);
 
     for iCue = 1:nCue % Cue A_rewarded (Ay), An, By, Bn, Cy, Cn, Dy, Dn
         nSpikePerTrial = cellfun(@length,spikeTime(trialIndex(:,iCue)));
         nSpikeTotal = sum(nSpikePerTrial);
+        
+        nSpikeRewardPerTrial = cellfun(@length,spikeTimeAfterReward(trialIndex(:,iCue)));
+        nSpikeRewardTotal = sum(nSpikeRewardPerTrial);
+        
         if trialResult(iCue)==0 || nSpikeTotal == 0
             xpt{iCue} = [];
             ypt{iCue} = [];
+            if nSpikeRewardTotal == 0
+                xptReward{iCue} = [];
+                yptReward{iCue} = [];
+            end
             continue;
         end
 
@@ -101,12 +136,18 @@ for iCell = 1:nCell
         yptTemp = yptTemp(:);
         xpt{iCue} = xptTemp/1000;
         ypt{iCue} = yptTemp;
+        
+        spikeRewardTemp
 
         % Making PSTH
         spkhist_temp = histc(spikeTemp/1000,spikeBin)/(binSize*trialResult(iCue));
         spkconv_temp = conv(spkhist_temp,fspecial('Gaussian',[1 5*resolution],resolution),'same');
         spikeHist(iCue,:) = spkhist_temp;
         spikeConv(iCue,:) = spkconv_temp;
+        
+        % PSTH after reward lick onset
+        
+        
     end
     peth = spikeHist;
     pethconv = spikeConv;
@@ -127,12 +168,12 @@ for iCell = 1:nCell
     
     for iPulse = 1:nPulse
         timeIndex = [];
-        [~,timeIndex] = histc(spikeData,blueOnsetTime(iPulse)+winTag);
+        [~,timeIndex] = histc(spikeData,blueOnsetTime(iPulse)+winTagBlue);
         if isempty(timeIndex); continue; end;
         spkTemp{iPulse} = spikeData(logical(timeIndex)) - blueOnsetTime(iPulse);
     end
     spikeTagTime = cell2mat(spkTemp)';
-    tagHist = histc(spikeTagTime,binTag)/(binTagSize/1000*nPulse);
+    tagHist = histc(spikeTagTime,binTagBlue)/(binTagSizeBlue/1000*nPulse);
     nTagPerTrial = cellfun(@length,spkTemp);
     nTagTotal = sum(nTagPerTrial);
     xpttag = []; ypttag = [];
@@ -145,7 +186,7 @@ for iCell = 1:nCell
         ypttag = ypttag(:);
     else
         xpttag = []; ypttag = [];
-        tagHist = zeros(1,length(binTag));      
+        tagHist = zeros(1,length(binTagBlue));      
     end
     save([cellName,'.mat'],...
         'xpttag','ypttag','binTag','tagHist','-append');

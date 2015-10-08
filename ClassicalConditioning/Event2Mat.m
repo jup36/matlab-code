@@ -56,6 +56,8 @@ for iFile = 1:nFile
     cue = NaN(nTrial, 1);
     reward = NaN(nTrial, 1);
     modulation = NaN(nTrial, 1);
+    rewardLickTime = NaN(nTrial,1);
+    validTrial = zeros(nTrial,1);
     for iTrial = 1:nTrial
         inTrial = (timeStamp>=timeStamp(trialOffsetIndex(iTrial)) & timeStamp<timeStamp(trialOffsetIndex(iTrial+1)));
         
@@ -72,13 +74,30 @@ for iFile = 1:nFile
         eventTime(iTrial,4) = timeStamp(rewardIndex);
         eventTime(iTrial,6) = timeStamp(trialOffsetIndex(iTrial+1));
         
+        rewardTempTime = find(lickOnsetTime>=eventTime(iTrial,4) & lickOnsetTime<eventTime(iTrial,6),1,'first');
+        if ~isempty(rewardTempTime)
+            rewardLickTime(iTrial) = timeStamp(rewardTempTime);
+            validTrial(iTrial) = 1; % omit trial without licking
+        else
+            rewardLickTime(iTrial) = NaN;
+            validTrial(iTrial) = 0;
+        end
+        
         cue(iTrial) = str2double(eventString{trialOnsetIndex}(4));
         modulation(iTrial) = any(modulationIndex);
         reward(iTrial) = any(strcmp(eventString, 'Reward') & inTrial);
     end
-    eventTime(isnan(eventTime(:,1)),:) = [];
+    out = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1));
+    eventTime(out,:) = [];
+    cue(out) = [];
+    modulation(out) = [];
+    reward(out) = [];
+        
     nTrial = size(eventTime,1);
     
+    trialDuration = eventTime(:,6) - eventTime(:,1);
+    maxTrialDuration = round(max(trialDuration)/1000);
+
     % trial summary
     trialIndex = false(nTrial,16);
     cueIndex = false(nTrial,4);
@@ -91,20 +110,8 @@ for iFile = 1:nFile
             end
         end
     end
-    
     cueResult = sum(cueIndex);
     trialResult = sum(trialIndex);
-    
-    % find first lick time
-    rewardCheckingTime = zeros(nTrial,1);
-    for iTrial = 1:nTrial
-        rewardTempTime = find(lickOnsetTime>=eventTime(iTrial,4) & lickOnsetTime<eventTime(iTrial,6),1,'first');
-        if ~isempty(rewardTempTime)
-            rewardCheckingTime(iTrial) = timeStamp(rewardTempTime);
-        else
-            rewardCheckingTime(iTrial) = NaN;
-        end
-    end
     
     % tagging
     tagIndex = timeStamp > taskTime(2);
@@ -114,10 +121,29 @@ for iFile = 1:nFile
     redOnsetTime = timeStamp(redOnsetIndex);
     
     save('Events.mat', ...
-        'baseTime', 'taskTime', ...
-        'lickOnsetTime', ...
+        'baseTime', 'taskTime', 'maxTrialDuration', 'lickOnsetTime', ...
         'nTrial', 'cue', 'reward', 'modulation', ...
-        'eventTime', 'trialIndex', 'cueIndex', 'cueResult', 'trialResult', 'rewardCheckingTime', ...
+        'eventTime', 'trialIndex', 'cueIndex', 'cueResult', 'trialResult', ...
         'blueOnsetTime', 'redOnsetTime');   
+    
+    % Collect only valid trial with licking
+    rewardLickTime = rewardLickTime(validTrial==1);
+    validTrial = logical(validTrial(~out));    
+    
+    nTrial = sum(validTrial);
+    cue = cue(validTrial);
+    modulation = modulation(validTrial);
+    reward = reward(validTrial);
+    eventTime = eventTime(validTrial,:);
+    trialIndex = trialIndex(validTrial);
+    cueIndex = cueIndex(validTrial);
+    cueResult = cueResult(validTrial);
+    trialResult = trialResult(validTrial);
+        
+    save('EventsValid.mat', ...
+        'baseTime', 'taskTime', 'maxTrialDuration', 'lickOnsetTime', 'rewardLickTime', ...
+        'nTrial', 'cue', 'reward', 'modulation', ...
+        'eventTime', 'trialIndex', 'cueIndex', 'cueResult', 'trialResult', ...
+        'blueOnsetTime', 'redOnsetTime'); 
 end
 disp('Done!');
