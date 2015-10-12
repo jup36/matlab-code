@@ -1,7 +1,7 @@
 function LickRatePlot(sessionFolder)
 % LickRatePlot Draws raster and peth for licking rate
 
-% variables
+% variables now
 lickWindow = [-1 8];
 binSize = 0.01; % unit: second;
 lickBin = -1:binSize:8;
