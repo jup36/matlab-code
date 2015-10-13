@@ -123,10 +123,14 @@ for iFile = 1:nFile
     nTrial = size(eventTime,1);
     trialDuration = eventTime(:,6) - eventTime(:,1);
     maxTrialDuration = round(max(trialDuration)/1000);
+    
+    eventDuration = round(mean(eventTime - repmat(eventTime(:,2),1,6))/500)/2;
 
     % trial summary
+    cueIndex = false(nTrial,4);
     trialIndex = false(nTrial,16);
     for iCue = 1:4
+        cueIndex(:,iCue) = cue==iCue;
         for iReward = 1:2
             for iModulation = 1:2
                 iCol = (iCue-1)*4 + (iReward-1)*2 + iModulation;
@@ -134,6 +138,7 @@ for iFile = 1:nFile
             end
         end
     end
+    cueResult = sum(cueIndex);
     trialResult = sum(trialIndex);
     
     % tagging
@@ -146,8 +151,8 @@ for iFile = 1:nFile
     save('Events.mat', ...
         'baseTime', 'taskTime', 'lickOnsetTime', 'rewardLickTime', ...
         'eventTime', 'cue', 'reward', 'modulation', ...
-        'nTrial', 'errorTrialNum', 'notValidTrialNum', 'maxTrialDuration', ...
-        'trialIndex', 'trialResult', ...
+        'nTrial', 'errorTrialNum', 'notValidTrialNum', 'maxTrialDuration', 'eventDuration', ...
+        'cueIndex', 'cueResult', 'trialIndex', 'trialResult', ...
         'blueOnsetTime', 'redOnsetTime');   
 end
 disp('Done!');
