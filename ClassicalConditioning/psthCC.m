@@ -1,48 +1,46 @@
-function psthCC(sessionFolder,includeAllTrial)
+function psthCC(sessionFolder)
 % psthCC Converts data from MClust t files to Matlab mat files
+
+% 1. raster, psth aligned with cue start
+% 2. raster, psth aligned with reward lick onset
+% 3. save raw data for later use: spikeTime{trial}
+% 4. tagging data under blue or red light
+
 narginchk(0, 2);
 
 % Task variables
-binSize = 0.01; % unit: sec, = 10 msec
+binSize = 10; % unit: msec, = 10 msec
 resolution = 10; % sigma = resolution * binSize = 100 msec
-rewardWin = [-2 4]*10^3;
-rewardWindow = [-1 3];
+winRw = [-2 4]*10^3;
 
 % Tag variables
-winTagBlue = [-20 100]; % unit: msec
-binTagSizeBlue = 2;
-binTagBlue = winTagBlue(1):binTagSizeBlue:winTagBlue(2);
+winBlueTag = [-20 100]; % unit: msec
+binSizeBlueTag = 2;
 
-winTagRed = [-500 2000]; % unit: msec
-binTagSizeRed = 10;
-binTagRed = winTagRed(1):binTagSizeRed:winTagRed(2);
+winRedTag = [-500 2000]; % unit: msec
+binSizeRedTag = 20;
 
 % Find files
-if nargin == 0 % Input이 없는 경우 그냥 폴더안의 t 파일을 검색
-    ttFile = FindFiles('T*.t','CheckSubdirs',0); % Subfolder는 검색하지 않는다
-else % Input이 있는 경우
-    if ~iscell(sessionFolder) % 셀 array인지 확인
+if nargin == 0
+    ttFile = FindFiles('T*.t','CheckSubdirs',0); 
+else
+    if ~iscell(sessionFolder)
         disp('Input argument is wrong. It should be cell array.');
         return;
-    elseif isempty(sessionFolder) % Cell이 맞지만 텅 비었으면 그냥 폴더 안의 t파일 검색
+    elseif isempty(sessionFolder)
         ttFile = FindFiles('T*.t','CheckSubdirs',1);
-    else % Cell이 맞고 빈 array가 아니면, 차례대로 cell 내용물 확인
+    else
         nFolder = length(sessionFolder);
         ttFile = cell(0,1);
         for iFolder = 1:nFolder
-            if exist(sessionFolder{iFolder})==7 % 폴더이면 그 아래 폴더들의 t파일 검색
+            if exist(sessionFolder{iFolder})==7 
                 cd(sessionFolder{iFolder});
                 ttFile = [ttFile;FindFiles('T*.t','CheckSubdirs',1)];
-            elseif strcmp(sessionFolder{iFolder}(end-1:end),'.t') % t파일이면 바로 합친다.
+            elseif strcmp(sessionFolder{iFolder}(end-1:end),'.t') 
                 ttFile = [ttFile;sessionFolder{iFolder}];
             end
         end
     end
-end
-if nargin == 2
-    includeAllTrial = logical(includeAllTrial);
-else
-    includeAllTrial = false;
 end
 if isempty(ttFile)
     disp('TT file does not exist!');
@@ -56,139 +54,119 @@ for iCell = 1:nCell
     [cellPath,cellName,~] = fileparts(ttFile{iCell});
     cd(cellPath);
 
-    % Event variables
-    if includeAllTrial
-        load('Events.mat');
-    else
-        load('EventsValid.mat');
-    end
+    % Load event variables
+    load('Events.mat');
     win = [-1 maxTrialDuration]*10^3; % unit: msec, window for binning
-    window = [-0.5 maxTrialDuration-0.5]; % unit: sec, final view window
     
-    yTemp = [0:nTrial-1; 1:nTrial; NaN(1,nTrial)]; % ypt 만들 때 사용
-    resultSum = [0 cumsum(trialResult)];
-    
+    % Load spike data
     spikeData = Data(ttData{iCell})/10; % unit: msec
-    spikeTime = cell(nTrial,1);
-    spikeTimeAfterReward = cell(nTrial,1);
     
     % Firing rate
     fr_base = sum(histc(spikeData,baseTime))/diff(baseTime/1000);
     fr_task = sum(histc(spikeData,taskTime))/diff(taskTime/1000);
-        
-    % Making raster, PSTH
-    for iTrial = 1:nTrial
-        timeIndex = [];
-        if isnan(eventTime(iTrial,1)); continue; end;
-        [~,timeIndex] = histc(spikeData,eventTime(iTrial,1)+win);
-        if isempty(timeIndex); continue; end;
-        spikeTime{iTrial} = spikeData(logical(timeIndex))-eventTime(iTrial,1);
-        
-        % raster for time from reward licking
-        [~,timeRewardIndex] = histc(spikeData,rewardLickTime(iTrial)+rewardWin);
-        if isempty(timeRewardIndex); continue; end;
-        spikeTimeAfterReward{iTrial} = spikeData(logical(timeRewardIndex)) - rewardLickTime(iTrial);
-    end
-
-    % Making raster points
-    spikeBin = win(1)/10^3:binSize:win(2)/10^3; % unit: sec
-    totalHist = histc(cell2mat(spikeTime),spikeBin)/(binSize*nTrial);
-    fireMean = mean(totalHist);
-    fireStd = std(totalHist);
     
-    nCue = length(trialResult);
-    nSpikeBin = length(spikeBin);
-    xpt = cell(1,nCue);
-    ypt = cell(1,nCue);
-    spikeHist = zeros(nCue,nSpikeBin);
-    spikeConv = zeros(nCue,nSpikeBin);
-    
-    xptReward = cell(1,nCue);
-    yptReward = cell(1,nCue);
-    spikeRewardHist = zeros(nCue,nSpikeBin);
-    spikeRewardConv = zeros(nCue,nSpikeBin);
+    % spike data aligned to events
+    spikeTime = spikeWin(spikeData, eventTime(:,1), win);
+    spikeTimeRw = spikeWin(spikeData, rewardLickTime, winRw);
 
-    for iCue = 1:nCue % Cue A_rewarded (Ay), An, By, Bn, Cy, Cn, Dy, Dn
-        nSpikePerTrial = cellfun(@length,spikeTime(trialIndex(:,iCue)));
-        nSpikeTotal = sum(nSpikePerTrial);
-        
-        nSpikeRewardPerTrial = cellfun(@length,spikeTimeAfterReward(trialIndex(:,iCue)));
-        nSpikeRewardTotal = sum(nSpikeRewardPerTrial);
-        
-        if trialResult(iCue)==0 || nSpikeTotal == 0
-            xpt{iCue} = [];
-            ypt{iCue} = [];
-            if nSpikeRewardTotal == 0
-                xptReward{iCue} = [];
-                yptReward{iCue} = [];
-            end
-            continue;
-        end
-
-        spikeTemp = cell2mat(spikeTime(trialIndex(:,iCue)))';
-        xptTemp = [spikeTemp;spikeTemp;NaN(1,nSpikeTotal)];
-        xptTemp = xptTemp(:);
-
-        yptTemp = [];
-        for iy = 1:trialResult(iCue)
-            yptTemp = [yptTemp repmat(yTemp(:,resultSum(iCue)+iy),1,nSpikePerTrial(iy))];
-        end
-        yptTemp = yptTemp(:);
-        xpt{iCue} = xptTemp/1000;
-        ypt{iCue} = yptTemp;
-        
-        spikeRewardTemp
-
-        % Making PSTH
-        spkhist_temp = histc(spikeTemp/1000,spikeBin)/(binSize*trialResult(iCue));
-        spkconv_temp = conv(spkhist_temp,fspecial('Gaussian',[1 5*resolution],resolution),'same');
-        spikeHist(iCue,:) = spkhist_temp;
-        spikeConv(iCue,:) = spkconv_temp;
-        
-        % PSTH after reward lick onset
-        
-        
-    end
-    peth = spikeHist;
-    pethconv = spikeConv;
-    zpeth = (spikeHist-fireMean)/fireStd;
-    zpethconv = (spikeConv-fireMean)/fireStd;
+    % Making raster points.  unit of xpt is sec. unit of ypt is trial.
+    [xpt, ypt, psthtime, ~, psthconv, psthconvz] = rasterPSTH(spikeTime,trialIndex,win,binSize,resolution);
+    xpt = xpt/10^3; psthtime = psthtime/10^3;
+    [xptRw, yptRw, psthtimeRw, ~, psthconvRw, psthconvzRw] = rasterPSTH(spikeTimeRw,trialIndex,win,binSize,resolution);
+    xptRw = xptRw/10^3; psthtimeRw = psthtimeRw/10^3;
 
     save([cellName,'.mat'],...
         'fr_base','fr_task',...
-        'xpt','ypt',...
-        'peth','pethconv',...
-        'zpeth','zpethconv',...
-        'window','spikeBin');
+        'spikeTime','spikeTimeRw',...
+        'win','xpt','ypt','psthtime','psthconv','psthconvz',...
+        'winRw','xptRw','yptRw','psthtimeRw','psthconvRw','psthconvzRw');
     
-    %% Tagging
-    nPulse = length(blueOnsetTime);
-    yTagTemp =[0:(nPulse-1);1:nPulse;NaN(1,nPulse)];
-    spkTemp = cell(nPulse,1);
+    % Tagging
+    spikeTimeBlueTag = spikeWin(spikeData, blueOnsetTime, winBlueTag);
+    spikeTimeRedTag = spikeWin(spikeData, redOnsetTime, winRedTag);
     
-    for iPulse = 1:nPulse
-        timeIndex = [];
-        [~,timeIndex] = histc(spikeData,blueOnsetTime(iPulse)+winTagBlue);
-        if isempty(timeIndex); continue; end;
-        spkTemp{iPulse} = spikeData(logical(timeIndex)) - blueOnsetTime(iPulse);
-    end
-    spikeTagTime = cell2mat(spkTemp)';
-    tagHist = histc(spikeTagTime,binTagBlue)/(binTagSizeBlue/1000*nPulse);
-    nTagPerTrial = cellfun(@length,spkTemp);
-    nTagTotal = sum(nTagPerTrial);
-    xpttag = []; ypttag = [];
-    if nTagTotal~=0;
-        xpttag = [spikeTagTime;spikeTagTime;NaN(1,nTagTotal)];
-        xpttag = xpttag(:);
-        for iytag = 1:nPulse
-            ypttag = [ypttag repmat(yTagTemp(:,iytag),1,nTagPerTrial(iytag))];
-        end
-        ypttag = ypttag(:);
-    else
-        xpttag = []; ypttag = [];
-        tagHist = zeros(1,length(binTagBlue));      
-    end
+    [xptBlueTag, yptBlueTag, psthtimeBlueTag,psthBlueTag,~,~] = rasterPSTH(spikeTimeBlueTag,true(size(blueOnsetTime)),winBlueTag,binSizeBlueTag,resolution);
+    [xptRedTag, yptRedTag, psthtimeRedTag,psthRedTag,~,~] = rasterPSTH(spikeTimeRedTag,true(size(redOnsetTime)),winRedTag,binSizeRedTag,resolution);
+    
     save([cellName,'.mat'],...
-        'xpttag','ypttag','binTag','tagHist','-append');
+        'spikeTimeBlueTag','xptBlueTag','yptBlueTag','psthtimeBlueTag','psthBlueTag',...
+        'spikeTimeRedTag','xptRedTag','yptRedTag','psthtimeRedTag','psthRedTag','-append');
 end
 disp('### Making Raster, PSTH is done!');
+
+function spikeTime = spikeWin(spikeData, eventTime, win)
+%spikeWin makes raw spikeData into eventTime aligned data
+%   spikeData: raw data from MClust. Unit must be ms.
+%   eventTime: each output cell will be eventTime aligned spike data. unit must be ms.
+%   win: spike within windows will be included. unit must be ms.
+narginchk(3, 3);
+
+nEvent = size(eventTime);
+spikeTime = cell(nEvent);
+for iEvent = 1:nEvent(1)
+    for jEvent = 1:nEvent(2)
+        timeIndex = [];
+        if isnan(eventTime(iEvent,jEvent)); continue; end;
+        [~,timeIndex] = histc(spikeData,eventTime(iEvent,jEvent)+win);
+        if isempty(timeIndex); continue; end;
+        spikeTime{iEvent,jEvent} = spikeData(logical(timeIndex))-eventTime(iEvent,jEvent);
+    end
+end
+
+function [xpt,ypt,spikeBin,spikeHist,spikeConv,spikeConvZ] = rasterPSTH(spikeTime, trialIndex, win, binSize, resolution)
+%rasterPSTH converts spike time into raster plot
+%   spikeTime: cell array. each cell contains vector array of spike times per each trial. unit is msec
+%   trialIndex: number of rows should be same as number of trials (length of spikeTime)
+%   win: window range of xpt. should be 2 numbers. unit is msec.
+%   binsize: unit is msec.
+%   resolution: sigma for convolution = binsize * resolution.
+%   unit of xpt will be sec.
+narginchk(5, 5);
+
+if length(spikeTime) ~= size(trialIndex,1); disp('Number of trials betwen spike data and index is different!'); break; end;
+if length(win) ~= 2; disp('Size of window is not adaquet!'); break; end;
+
+spikeBin = win(1):binSize:win(2); % unit: msec
+nSpikeBin = length(spikeBin);
+
+nTrial = length(spikeTime);
+nCue = size(trialIndex,2);
+trialResult = sum(trialIndex);
+resultSum = [0 cumsum(trialResult)];
+
+yTemp = [0:nTrial-1; 1:nTrial; NaN(1,nTrial)]; % template for ypt
+xpt = cell(1,nCue);
+ypt = cell(1,nCue);
+spikeHist = zeros(nCue,nSpikeBin);
+spikeConv = zeros(nCue,nSpikeBin);
+
+for iCue = 1:nCue
+    if trialResult(iCue) == 0; continue; end;
+    
+    % raster
+    nSpikePerTrial = cellfun(@length,spikeTime(trialIndex(:,iCue)));
+    nSpikeTotal = sum(nSpikePerTrial);
+    if nSpikeTotal == 0; continue; end;
+    
+    spikeTemp = cell2mat(spikeTime(trialIndex(:,iCue)))';
+    
+    xptTemp = [spikeTemp;spikeTemp;NaN(1,nSpikeTotal)];
+    xpt{iCue} = xptTemp(:);
+
+    yptTemp = [];
+    for iy = 1:trialResult(iCue)
+        yptTemp = [yptTemp repmat(yTemp(:,resultSum(iCue)+iy),1,nSpikePerTrial(iy))];
+    end
+    ypt{iCue} = yptTemp(:);
+
+    % psth
+    spkhist_temp = histc(spikeTemp,spikeBin)/(binSize/10^3*trialResult(iCue));
+    spkconv_temp = conv(spkhist_temp,fspecial('Gaussian',[1 5*resolution],resolution),'same');
+    spikeHist(iCue,:) = spkhist_temp;
+    spikeConv(iCue,:) = spkconv_temp;
+end
+
+totalHist = histc(cell2mat(spikeTime),spikeBin)/(binSize/10^3*nTrial);
+fireMean = mean(totalHist);
+fireStd = std(totalHist);
+spikeConvZ = (spikeConv-fireMean)/fireStd;
