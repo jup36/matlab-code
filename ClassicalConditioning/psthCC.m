@@ -71,9 +71,9 @@ for iCell = 1:nCell
 
     % Making raster points.  unit of xpt is sec. unit of ypt is trial.
     [xpt, ypt, psthtime, ~, psthconv, psthconvz] = rasterPSTH(spikeTime,trialIndex,win,binSize,resolution);
-    xpt = xpt/10^3; psthtime = psthtime/10^3;
+    xpt = cellfun(@(x) x/1000, xpt, 'UniformOutput', false); psthtime = psthtime/10^3;
     [xptRw, yptRw, psthtimeRw, ~, psthconvRw, psthconvzRw] = rasterPSTH(spikeTimeRw,trialIndex,win,binSize,resolution);
-    xptRw = xptRw/10^3; psthtimeRw = psthtimeRw/10^3;
+    xptRw = cellfun(@(x) x/1000, xptRw, 'UniformOutput', false); psthtimeRw = psthtimeRw/10^3;
 
     save([cellName,'.mat'],...
         'fr_base','fr_task',...
@@ -101,6 +101,7 @@ function spikeTime = spikeWin(spikeData, eventTime, win)
 %   win: spike within windows will be included. unit must be ms.
 narginchk(3, 3);
 
+if isempty(eventTime); spikeTime = []; return; end;
 nEvent = size(eventTime);
 spikeTime = cell(nEvent);
 for iEvent = 1:nEvent(1)
@@ -122,9 +123,10 @@ function [xpt,ypt,spikeBin,spikeHist,spikeConv,spikeConvZ] = rasterPSTH(spikeTim
 %   resolution: sigma for convolution = binsize * resolution.
 %   unit of xpt will be sec.
 narginchk(5, 5);
-
-if length(spikeTime) ~= size(trialIndex,1); disp('Number of trials betwen spike data and index is different!'); break; end;
-if length(win) ~= 2; disp('Size of window is not adaquet!'); break; end;
+if isempty(spikeTime) || isempty(trialIndex) || length(spikeTime) ~= size(trialIndex,1) || length(win) ~= 2
+    xpt = []; ypt = []; spikeBin = []; spikeHist = []; spikeConv = []; spikeConvZ = [];
+    return;
+end;
 
 spikeBin = win(1):binSize:win(2); % unit: msec
 nSpikeBin = length(spikeBin);
