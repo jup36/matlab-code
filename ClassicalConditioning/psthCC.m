@@ -72,7 +72,7 @@ for iCell = 1:nCell
     % Making raster points.  unit of xpt is sec. unit of ypt is trial.
     [xpt, ypt, psthtime, ~, psthconv, psthconvz] = rasterPSTH(spikeTime,trialIndex,win,binSize,resolution);
     xpt = cellfun(@(x) x/1000, xpt, 'UniformOutput', false); psthtime = psthtime/10^3;
-    [xptRw, yptRw, psthtimeRw, ~, psthconvRw, psthconvzRw] = rasterPSTH(spikeTimeRw,trialIndex,win,binSize,resolution);
+    [xptRw, yptRw, psthtimeRw, ~, psthconvRw, psthconvzRw] = rasterPSTH(spikeTimeRw,trialIndex,winRw,binSize,resolution);
     xptRw = cellfun(@(x) x/1000, xptRw, 'UniformOutput', false); psthtimeRw = psthtimeRw/10^3;
 
     save([cellName,'.mat'],...
@@ -121,7 +121,7 @@ function [xpt,ypt,spikeBin,spikeHist,spikeConv,spikeConvZ] = rasterPSTH(spikeTim
 %   win: window range of xpt. should be 2 numbers. unit is msec.
 %   binsize: unit is msec.
 %   resolution: sigma for convolution = binsize * resolution.
-%   unit of xpt will be sec.
+%   unit of xpt will be msec.
 narginchk(5, 5);
 if isempty(spikeTime) || isempty(trialIndex) || length(spikeTime) ~= size(trialIndex,1) || length(win) ~= 2
     xpt = []; ypt = []; spikeBin = []; spikeHist = []; spikeConv = []; spikeConvZ = [];
@@ -143,7 +143,11 @@ spikeHist = zeros(nCue,nSpikeBin);
 spikeConv = zeros(nCue,nSpikeBin);
 
 for iCue = 1:nCue
-    if trialResult(iCue) == 0; continue; end;
+    if trialResult(iCue) == 0
+        spikeHist(iCue,:) = NaN;
+        spikeConv(iCue,:) = NaN;
+        continue; 
+    end
     
     % raster
     nSpikePerTrial = cellfun(@length,spikeTime(trialIndex(:,iCue)));
