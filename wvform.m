@@ -86,12 +86,13 @@ for ifile = 1:nfile
     hfvlfst = find(spkwv(maintt,pkidx:vlidx)<=hfvl,1,'first')+pkidx-1;
     hfvllst = find(spkwv(maintt,vlidx:end)<=hfvl,1,'last')+vlidx-1;
     hfvl1 = (hfvlfst-1) + (spkwv(maintt,hfvlfst-1)-hfvl)/(spkwv(maintt,hfvlfst-1)-spkwv(maintt,hfvlfst));
-    if hfvllst==32
-        hfvl2=spkwv(maintt,hfvllst);
-    else
+    if hfvllst<32
         hfvl2 = hfvllst + (hfvl-spkwv(maintt,hfvllst))/(spkwv(maintt,hfvllst+1)-spkwv(maintt,hfvllst));
+        hfvwth = 1000*(hfvl2-hfvl1)/32;    
+    else
+        hfvwth = 1000*(vlidx-hfvl1)*2/32;
     end
-    hfvwth = 1000*(hfvl2-hfvl1)/32;    
+    
     
     save([cellname,'.mat'],...
         'spkwv','spkwth','spkpvr','hfvwth',...
