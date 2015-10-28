@@ -6,10 +6,6 @@ function psthplotCC(folders)
 %
 % Ver 2.0 (2015. 1. 7)
 %   Function 수정
-%   Figure file은 처음 실행한 directory에서 저장되도록
-%   Modulation하지 않은 파일만 분석한다. 
-% Ver 2.1 (2015. 1. 9)
-%   Log-rank test plot 추가
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Variables
 win = [-20 100]; % Tagging period
