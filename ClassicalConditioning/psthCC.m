@@ -14,11 +14,11 @@ resolution = 10; % sigma = resolution * binSize = 100 msec
 winRw = [-2 4]*10^3;
 
 % Tag variables
-winBlueTag = [-20 100]; % unit: msec
-binSizeBlueTag = 2;
+winTagBlue = [-20 100]; % unit: msec
+binSizeTagBlue = 2;
 
-winRedTag = [-500 2000]; % unit: msec
-binSizeRedTag = 20;
+winTagRed = [-500 2000]; % unit: msec
+binSizeTagRed = 20;
 
 % Find files
 if nargin == 0
@@ -70,27 +70,30 @@ for iCell = 1:nCell
     spikeTimeRw = spikeWin(spikeData, rewardLickTime, winRw);
 
     % Making raster points.  unit of xpt is sec. unit of ypt is trial.
-    [xpt, ypt, psthtime, ~, psthconv, psthconvz] = rasterPSTH(spikeTime,trialIndex,win,binSize,resolution);
+    [xpt, ypt, psthtime, psthbar, psthconv, psthconvz] = rasterPSTH(spikeTime,trialIndex,win,binSize,resolution);
     xpt = cellfun(@(x) x/1000, xpt, 'UniformOutput', false); psthtime = psthtime/10^3;
-    [xptRw, yptRw, psthtimeRw, ~, psthconvRw, psthconvzRw] = rasterPSTH(spikeTimeRw,trialIndex,winRw,binSize,resolution);
+    [xptCue, yptCue, ~, psthbarCue, psthconvCue, psthconvzCue] = rasterPSTH(spikeTime,cueIndex,win,binSize,resolution);
+    xptCue = cellfun(@(x) x/1000, xptCue, 'UniformOutput', false);
+    [xptRw, yptRw, psthtimeRw, psthbarRw, psthconvRw, psthconvzRw] = rasterPSTH(spikeTimeRw,trialIndex,winRw,binSize,resolution);
     xptRw = cellfun(@(x) x/1000, xptRw, 'UniformOutput', false); psthtimeRw = psthtimeRw/10^3;
 
     save([cellName,'.mat'],...
         'fr_base','fr_task',...
         'spikeTime','spikeTimeRw',...
-        'win','xpt','ypt','psthtime','psthconv','psthconvz',...
-        'winRw','xptRw','yptRw','psthtimeRw','psthconvRw','psthconvzRw');
+        'win','xpt','ypt','psthtime','psthbar','psthconv','psthconvz',...
+        'xptCue','yptCue','psthbarCue','psthconvCue','psthconvzCue',...
+        'winRw','xptRw','yptRw','psthbarRw','psthtimeRw','psthconvRw','psthconvzRw');
     
     % Tagging
-    spikeTimeBlueTag = spikeWin(spikeData, blueOnsetTime, winBlueTag);
-    spikeTimeRedTag = spikeWin(spikeData, redOnsetTime, winRedTag);
-    
-    [xptBlueTag, yptBlueTag, psthtimeBlueTag,psthBlueTag,~,~] = rasterPSTH(spikeTimeBlueTag,true(size(blueOnsetTime)),winBlueTag,binSizeBlueTag,resolution);
-    [xptRedTag, yptRedTag, psthtimeRedTag,psthRedTag,~,~] = rasterPSTH(spikeTimeRedTag,true(size(redOnsetTime)),winRedTag,binSizeRedTag,resolution);
-    
+    spikeTimeTagBlue = spikeWin(spikeData, blueOnsetTime, winTagBlue);
+    [xptTagBlue, yptTagBlue, psthtimeTagBlue,psthTagBlue,~,~] = rasterPSTH(spikeTimeTagBlue,true(size(blueOnsetTime)),winTagBlue,binSizeTagBlue,resolution);
     save([cellName,'.mat'],...
-        'spikeTimeBlueTag','xptBlueTag','yptBlueTag','psthtimeBlueTag','psthBlueTag',...
-        'spikeTimeRedTag','xptRedTag','yptRedTag','psthtimeRedTag','psthRedTag','-append');
+        'spikeTimeTagBlue','xptTagBlue','yptTagBlue','psthtimeTagBlue','psthTagBlue','-append');
+    
+    spikeTimeTagRed = spikeWin(spikeData, redOnsetTime, winTagRed);
+    [xptTagRed, yptTagRed, psthtimeTagRed,psthTagRed,~,~] = rasterPSTH(spikeTimeTagRed,true(size(redOnsetTime)),winTagRed,binSizeTagRed,resolution);
+    save([cellName,'.mat'],...
+        'spikeTimeTagRed','xptTagRed','yptTagRed','psthtimeTagRed','psthTagRed','-append');
 end
 disp('### Making Raster, PSTH is done!');
 

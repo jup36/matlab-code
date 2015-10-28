@@ -127,12 +127,12 @@ for iFile = 1:nFile
     eventDuration = round(mean(eventTime - repmat(eventTime(:,2),1,6))/500)/2;
 
     % trial summary
-    cueIndex = false(nTrial,4);
+    cueIndex = false(nTrial,8);
     trialIndex = false(nTrial,16);
     for iCue = 1:4
-        cueIndex(:,iCue) = cue==iCue;
-        for iReward = 1:2
-            for iModulation = 1:2
+        for iModulation = 1:2
+            cueIndex(:,(iCue-1)*2 + iModulation) = (cue==iCue) & (modulation==(iModulation-1));
+            for iReward = 1:2
                 iCol = (iCue-1)*4 + (iReward-1)*2 + iModulation;
                 trialIndex(:,iCol) = (cue==iCue) & (reward==(2-iReward)) & (modulation==(iModulation-1));
             end

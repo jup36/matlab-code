@@ -88,20 +88,11 @@ for ifile = 1:nfile
     hfvl1 = (hfvlfst-1) + (spkwv(maintt,hfvlfst-1)-hfvl)/(spkwv(maintt,hfvlfst-1)-spkwv(maintt,hfvlfst));
     if hfvllst<32
         hfvl2 = hfvllst + (hfvl-spkwv(maintt,hfvllst))/(spkwv(maintt,hfvllst+1)-spkwv(maintt,hfvllst));
-<<<<<<< HEAD
         hfvwth = 1000*(hfvl2-hfvl1)/32;    
     else
         hfvwth = 1000*(vlidx-hfvl1)*2/32;
     end
-    
-    
-=======
-        hfvwth = 1000*(hfvl2-hfvl1)/32;
-    else
-        hfvwth = 1000*(vlidx-hfvl1)*2/32;
-    end
         
->>>>>>> origin/master
     save([cellname,'.mat'],...
         'spkwv','spkwth','spkpvr','hfvwth',...
         '-append');
