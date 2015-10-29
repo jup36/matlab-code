@@ -68,13 +68,14 @@ for iCell = 1:nCell
     % spike data aligned to events
     spikeTime = spikeWin(spikeData, eventTime(:,1), win);
     spikeTimeRw = spikeWin(spikeData, rewardLickTime, winRw);
+    inRw = ~isnan(rewardLickTime);
 
     % Making raster points.  unit of xpt is sec. unit of ypt is trial.
-    [xpt, ypt, psthtime, psthbar, psthconv, psthconvz] = rasterPSTH(spikeTime,trialIndex,win,binSize,resolution);
+    [xpt, ypt, psthtime, psthbar, psthconv, psthconvz] = rasterPSTH(spikeTime,trialIndex,win,binSize,resolution,1);
     xpt = cellfun(@(x) x/1000, xpt, 'UniformOutput', false); psthtime = psthtime/10^3;
-    [xptCue, yptCue, ~, psthbarCue, psthconvCue, psthconvzCue] = rasterPSTH(spikeTime,cueIndex,win,binSize,resolution);
+    [xptCue, yptCue, ~, psthbarCue, psthconvCue, psthconvzCue] = rasterPSTH(spikeTime,cueIndex,win,binSize,resolution,1);
     xptCue = cellfun(@(x) x/1000, xptCue, 'UniformOutput', false);
-    [xptRw, yptRw, psthtimeRw, psthbarRw, psthconvRw, psthconvzRw] = rasterPSTH(spikeTimeRw,trialIndex,winRw,binSize,resolution);
+    [xptRw, yptRw, psthtimeRw, psthbarRw, psthconvRw, psthconvzRw] = rasterPSTH(spikeTimeRw(inRw),trialIndex(inRw,:),winRw,binSize,resolution,1);
     xptRw = cellfun(@(x) x/1000, xptRw, 'UniformOutput', false); psthtimeRw = psthtimeRw/10^3;
 
     save([cellName,'.mat'],...
