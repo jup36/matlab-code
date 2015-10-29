@@ -73,7 +73,7 @@ onsetTime(outBin(:))=[];
 if isempty(onsetTime); p = []; time = []; H1 = []; H2 = []; return; end;
 nLight = length(onsetTime);
 
-bin = [-floor(baseRange/testRange):testRange:0];
+bin = [-floor(baseRange/testRange)*testRange:testRange:0];
 nBin = length(bin);
 
 binMat = ones(nLight,nBin)*diag(bin);
