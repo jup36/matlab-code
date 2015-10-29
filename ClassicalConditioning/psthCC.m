@@ -86,12 +86,12 @@ for iCell = 1:nCell
     
     % Tagging
     spikeTimeTagBlue = spikeWin(spikeData, blueOnsetTime, winTagBlue);
-    [xptTagBlue, yptTagBlue, psthtimeTagBlue,psthTagBlue,~,~] = rasterPSTH(spikeTimeTagBlue,true(size(blueOnsetTime)),winTagBlue,binSizeTagBlue,resolution);
+    [xptTagBlue, yptTagBlue, psthtimeTagBlue,psthTagBlue,~,~] = rasterPSTH(spikeTimeTagBlue,true(size(blueOnsetTime)),winTagBlue,binSizeTagBlue,resolution,1);
     save([cellName,'.mat'],...
         'spikeTimeTagBlue','xptTagBlue','yptTagBlue','psthtimeTagBlue','psthTagBlue','-append');
     
     spikeTimeTagRed = spikeWin(spikeData, redOnsetTime, winTagRed);
-    [xptTagRed, yptTagRed, psthtimeTagRed,psthTagRed,~,~] = rasterPSTH(spikeTimeTagRed,true(size(redOnsetTime)),winTagRed,binSizeTagRed,resolution);
+    [xptTagRed, yptTagRed, psthtimeTagRed,psthTagRed,~,~] = rasterPSTH(spikeTimeTagRed,true(size(redOnsetTime)),winTagRed,binSizeTagRed,resolution,1);
     save([cellName,'.mat'],...
         'spikeTimeTagRed','xptTagRed','yptTagRed','psthtimeTagRed','psthTagRed','-append');
 end
@@ -117,15 +117,16 @@ for iEvent = 1:nEvent(1)
     end
 end
 
-function [xpt,ypt,spikeBin,spikeHist,spikeConv,spikeConvZ] = rasterPSTH(spikeTime, trialIndex, win, binSize, resolution)
+function [xpt,ypt,spikeBin,spikeHist,spikeConv,spikeConvZ] = rasterPSTH(spikeTime, trialIndex, win, binSize, resolution, dot)
 %rasterPSTH converts spike time into raster plot
 %   spikeTime: cell array. each cell contains vector array of spike times per each trial. unit is msec
 %   trialIndex: number of rows should be same as number of trials (length of spikeTime)
 %   win: window range of xpt. should be 2 numbers. unit is msec.
 %   binsize: unit is msec.
 %   resolution: sigma for convolution = binsize * resolution.
+%   dot: 1-dot, 0-line
 %   unit of xpt will be msec.
-narginchk(5, 5);
+narginchk(5, 6);
 if isempty(spikeTime) || isempty(trialIndex) || length(spikeTime) ~= size(trialIndex,1) || length(win) ~= 2
     xpt = []; ypt = []; spikeBin = []; spikeHist = []; spikeConv = []; spikeConvZ = [];
     return;
@@ -160,13 +161,21 @@ for iCue = 1:nCue
     spikeTemp = cell2mat(spikeTime(trialIndex(:,iCue)))';
     
     xptTemp = [spikeTemp;spikeTemp;NaN(1,nSpikeTotal)];
-    xpt{iCue} = xptTemp(:);
+    if (nargin == 6) && (dot==1)
+        xpt{iCue} = xptTemp(2,:);
+    else
+        xpt{iCue} = xptTemp(:);
+    end
 
     yptTemp = [];
     for iy = 1:trialResult(iCue)
         yptTemp = [yptTemp repmat(yTemp(:,resultSum(iCue)+iy),1,nSpikePerTrial(iy))];
     end
-    ypt{iCue} = yptTemp(:);
+    if (nargin == 6) && (dot==1)
+        ypt{iCue} = yptTemp(2,:);
+    else
+        ypt{iCue} = yptTemp(:);
+    end
 
     % psth
     spkhist_temp = histc(spikeTemp,spikeBin)/(binSize/10^3*trialResult(iCue));
