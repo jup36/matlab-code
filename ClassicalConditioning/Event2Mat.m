@@ -129,7 +129,7 @@ for iFile = 1:nFile
 
     % trial summary
     cueIndex = false(nTrial,8); % [CueA&noMod CueA&Mod ...]
-    trialIndex = false(nTrial,16);% [CueA&noMod&Reward CueA&noMod&noReward ...]
+    trialIndex = false(nTrial,16);% [CueA&noMod&Reward CueA&Mod&Reward CueA&noMod&noReward CueA&noMod&noReward ...]
     for iCue = 1:4
         for iModulation = 1:2
             cueIndex(:,(iCue-1)*2 + iModulation) = (cue==iCue) & (modulation==(iModulation-1));
