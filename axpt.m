@@ -16,9 +16,12 @@ function axesPosition = axpt(nX, nY, xPos, yPos, positionVector, interval)
 narginchk(4,6);
 if nargin <= 5
     interval = [0.05 0.05];
-    if (nargin <= 4) || isempty(positionVector)
+    if nargin <= 4
         positionVector = [0.1 0.1 0.85 0.85];
-    end
+    end  
+end
+if isempty(positionVector)
+    positionVector = [0.1 0.1 0.85 0.85];
 end
 
 xInterval = interval(1)*positionVector(3);
