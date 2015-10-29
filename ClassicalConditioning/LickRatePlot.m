@@ -118,6 +118,15 @@ for iFile = 1:nFile
 %     [~,pTtest] = ttest2(lickNum(cueIndex(:,1)),lickNum(cueIndex(:,2)));
 %     [b, dev, stats] = glmfit([2-cue cumsum(reward)],lickNum,'poisson');
 
+    [lickReg,lickRegXpt] = sliding(lickHist,50,10);
+    pValueReg = zeros(length(lickReg(1,:)),3);
+    pValueRegIndex = zeros(length(lickReg(1,:)),3);
+    for iRegBin = 1: length(lickReg(1,:))
+        [~,~,stat] = glmfit([cue-1 reward modulation],lickReg(:,iRegBin),'normal');
+        pValueReg(iRegBin,:) = stat.p(2:4)';
+        pValueRegIndex(iRegBin,:) = stat.p(2:4)'<0.05;
+        pValueRegIndex(iRegBin,pValueRegIndex(iRegBin,:)==0) = NaN;
+    end
 
     save('Events.mat', ...
         'xLickRaster','yLickRaster', ...
@@ -158,6 +167,8 @@ for iFile = 1:nFile
         plot(lickBin, lickMeanConv(jType,:), ...
             'LineStyle', lineStl{jType}, 'Color', lineClr{jType}, 'LineWidth', lineWth(jType));
     end
+    plot(lickRegXpt/100.*pValueRegIndex(:,1)',repmat(yMax*0.97,1,length(lickRegXpt)),'Marker','s','MarkerFaceColor','k','MarkerEdgeColor','k','MarkerSize',5);
+    plot(lickRegXpt/100.*pValueRegIndex(:,3)',repmat(yMax*0.97,1,length(lickRegXpt)),'Marker','s','MarkerFaceColor','r','MarkerEdgeColor','r','MarkerSize',5);
     set(gca, 'box', 'off', 'TickDir', 'out', 'LineWidth', 0.2, 'FontSize', 5, ...
         'XLim', [lickWindow(1)+0.5 lickWindow(2)-0.5], 'XTick', [], ...
         'YLim', [0 yMax], 'YTick', [0 yMax]);
@@ -195,6 +206,8 @@ for iFile = 1:nFile
         plot(lickBin, lickMeanConv(jType,:), ...
             'LineStyle', lineStl{jType}, 'Color', lineClr{jType}, 'LineWidth', lineWth(jType));
     end
+    plot(lickRegXpt/100.*pValueRegIndex(:,1)',repmat(yMax*0.97,1,length(lickRegXpt)),'Marker','s','MarkerFaceColor','k','MarkerEdgeColor','k','MarkerSize',5);
+    plot(lickRegXpt/100.*pValueRegIndex(:,3)',repmat(yMax*0.97,1,length(lickRegXpt)),'Marker','s','MarkerFaceColor','r','MarkerEdgeColor','r','MarkerSize',5);
     set(gca, 'box', 'off', 'TickDir', 'out', 'LineWidth', 0.2, 'FontSize', 5, ...
         'XLim', [lickWindow(1)+0.5 lickWindow(2)-0.5], 'XTick', [eventDuration(1:4) lickWindow(2)-0.5], 'XTickLabel', {'', eventDuration(2), eventDuration(3), eventDuration(4), ''}, ...
         'YLim', [0 yMax], 'YTick', [0 yMax]);
