@@ -17,7 +17,7 @@ narginchk(4,6);
 if nargin <= 5
     interval = [0.05 0.05];
     if (nargin <= 4) || isempty(positionVector)
-        positionVector = [0.1 0.1 0.8 0.8];
+        positionVector = [0.1 0.1 0.85 0.85];
     end
 end
 
