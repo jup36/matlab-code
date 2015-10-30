@@ -109,6 +109,7 @@ for iFile = 1:nFile
     lickSemConv = [lickMeanConv-lickSemConv flip(lickMeanConv+lickSemConv,2)];
     
     % licking statistics
+    warning('off');
     lickNum = zeros(nTrial,2);
     for iTrial = 1:nTrial
         lickNum(iTrial,:) = histc(lickOnsetTime,eventTime(iTrial,[2 4]));
@@ -167,8 +168,8 @@ for iFile = 1:nFile
         plot(lickBin, lickMeanConv(jType,:), ...
             'LineStyle', lineStl{jType}, 'Color', lineClr{jType}, 'LineWidth', lineWth(jType));
     end
-    plot(lickRegXpt/100.*pValueRegIndex(:,1)',repmat(yMax*0.9,1,length(lickRegXpt)),'Marker','s','MarkerFaceColor','k','MarkerEdgeColor','k','MarkerSize',5);
-    plot(lickRegXpt/100.*pValueRegIndex(:,3)',repmat(yMax*0.9,1,length(lickRegXpt)),'Marker','s','MarkerFaceColor','r','MarkerEdgeColor','r','MarkerSize',5);
+    plot(lickRegXpt/100.*pValueRegIndex(:,1)',repmat(yMax*0.9,1,length(lickRegXpt)),'LineStyle','none','Marker','s','MarkerFaceColor','k','MarkerEdgeColor','k','MarkerSize',5);
+    plot(lickRegXpt/100.*pValueRegIndex(:,3)',repmat(yMax*0.9,1,length(lickRegXpt)),'LineStyle','none','Marker','s','MarkerFaceColor','r','MarkerEdgeColor','r','MarkerSize',5);
     set(gca, 'box', 'off', 'TickDir', 'out', 'LineWidth', 0.2, 'FontSize', 5, ...
         'XLim', [lickWindow(1)+0.5 lickWindow(2)-0.5], 'XTick', [], ...
         'YLim', [0 yMax], 'YTick', [0 yMax]);
@@ -206,8 +207,8 @@ for iFile = 1:nFile
         plot(lickBin, lickMeanConv(jType,:), ...
             'LineStyle', lineStl{jType}, 'Color', lineClr{jType}, 'LineWidth', lineWth(jType));
     end
-    plot(lickRegXpt/100.*pValueRegIndex(:,1)',repmat(yMax*0.9,1,length(lickRegXpt)),'Marker','s','MarkerFaceColor','k','MarkerEdgeColor','k','MarkerSize',5);
-    plot(lickRegXpt/100.*pValueRegIndex(:,3)',repmat(yMax*0.9,1,length(lickRegXpt)),'Marker','s','MarkerFaceColor','r','MarkerEdgeColor','r','MarkerSize',5);
+    plot(lickRegXpt/100.*pValueRegIndex(:,1)',repmat(yMax*0.9,1,length(lickRegXpt)),'LineStyle','none','Marker','s','MarkerFaceColor','k','MarkerEdgeColor','k','MarkerSize',5);
+    plot(lickRegXpt/100.*pValueRegIndex(:,3)',repmat(yMax*0.9,1,length(lickRegXpt)),'LineStyle','none','Marker','s','MarkerFaceColor','r','MarkerEdgeColor','r','MarkerSize',5);
     set(gca, 'box', 'off', 'TickDir', 'out', 'LineWidth', 0.2, 'FontSize', 5, ...
         'XLim', [lickWindow(1)+0.5 lickWindow(2)-0.5], 'XTick', [eventDuration(1:4) lickWindow(2)-0.5], 'XTickLabel', {'', eventDuration(2), eventDuration(3), eventDuration(4), ''}, ...
         'YLim', [0 yMax], 'YTick', [0 yMax]);

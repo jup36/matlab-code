@@ -4,8 +4,8 @@ function tagstatCC(sessionFolder)
 % Variables
 testRangeBlue = 10; % unit: ms
 baseRangeBlue = 400; % baseline
-testRangeRed = 100;
-baseRangeRed = 4000;
+testRangeRed = 400;
+baseRangeRed = 4400;
 
 % Find files
 if nargin == 0

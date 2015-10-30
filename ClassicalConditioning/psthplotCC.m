@@ -1,46 +1,25 @@
-function psthplotCC(folders)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Object: Mat으로 저장된 정보로 PSTH/Raster/Tagging 등의 그림을 그린다.
-% Author: Dohoung Kim
-% First written: 2014/09/19
-%
-% Ver 2.0 (2015. 1. 7)
-%   Function 수정
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Variables
-win = [-20 100]; % Tagging period
-p_value = 0.05; % Threshold for tagging
-
-% Plot properties
-lineClr = {[0.8 0 0], [1 0.6 0.6], [1 0.6 0], [1 1 0.4], ...
-        [0 0 0.8], [0.6 0.6 1], [0 0.6 1], [0.4 1 1], ...
-        [1 0.6 0], [1 1 0.4], [1 0.6 0], [1 1 0.4], ...
-        [0 0.6 1], [0.4 1 1], [0 0.6 1], [0.4 1 1]};
-lineStl = {'-', '-', '-', '-', ...
-    '-', '-', '-', '-', ...
-    '-', '-', '-', '-', ...
-    '-', '-', '-', '-'};
-lineWth = [1 0.5 1 0.5 1 0.5 1 0.5 1 0.5 0.5 0.5 1 0.5 0.5 0.5];
+function psthplotCC(cellFolder)
+%psthplotCC draws summary plot for each cell
 
 % Find files
 switch nargin
-    case 0 % Input이 없는 경우 그냥 폴더안의 mat 파일을 검색
-        matFile = FindFiles('T*.mat','CheckSubdirs',0); % Subfolder는 검색하지 않는다
-    case 1 % Input이 있는 경우
-        if ~iscell(folders) % 셀 array인지 확인
+    case 0
+        matFile = FindFiles('T*.mat','CheckSubdirs',0); 
+    case 1 
+        if ~iscell(cellFolder) 
             disp('Input argument is wrong. It should be cell array.');
             return;
-        elseif isempty(folders) % Cell이 맞지만 텅 비었으면 그냥 폴더 안의 mat파일 검색
-            matFile = FindFiles('T*.mat','CheckSubdirs',1); % Subfolder 검색.
-        else % Cell이 맞고 빈 array가 아니면, 차례대로 cell 내용물 확인
-            nfolder = length(folders);
+        elseif isempty(cellFolder)
+            matFile = FindFiles('T*.mat','CheckSubdirs',1);
+        else
+            nFolder = length(cellFolder);
             matFile = cell(0,1);
-            for ifolder = 1:nfolder
-                if exist(folders{ifolder})==7 % 폴더이면 그 아래 폴더들의 mat파일 검색
-                    cd(folders{ifolder});
+            for iFolder = 1:nFolder
+                if exist(cellFolder{iFolder})==7
+                    cd(cellFolder{iFolder});
                     matFile = [matFile;FindFiles('T*.mat','CheckSubdirs',1)];
-                elseif strcmp(folders{ifolder}(end-3:end),'.mat') % mat파일이면 바로 합친다.
-                    matFile = [matFile;folders{ifolder}];
+                elseif strcmp(cellFolder{iFolder}(end-3:end),'.mat')
+                    matFile = [matFile;cellFolder{iFolder}];
                 end
             end
         end
@@ -49,184 +28,305 @@ if isempty(matFile)
     disp('Mat file does not exist!');
     return;
 end
-nFiles = length(matFile);
+nFile = length(matFile);
 rtdir = pwd;
 
-% Plot position
-% fHandle = figure('PaperUnits','centimeters','PaperPosition',[2 2 8.9 6.88]);
-nRow = 5;
-startPoint = [0.5 0.1];
-figWidth = [0.4 0.8];
-interval_y = 0.05;
-interFig_y = 0.01;
-dx = figWidth(1);
-dy = (figWidth(2)-(nRow-1)*interval_y-nRow*interFig_y)/(2*nRow);
-axpt = zeros(nRow,2,4);
-for iRow = 1:nRow
-    axpt(iRow,1,:) = [startPoint(1),...
-        startPoint(2)+(nRow-iRow)*(2*dy+interFig_y+interval_y)+interFig_y+interval_y,...
-        dx dy];
-    axpt(iRow,2,:) = [startPoint(1),...
-        startPoint(2)+(nRow-iRow)*(2*dy+interFig_y+interval_y),...
-        dx dy];
-end
+% Plot properties
+lineClr = {[0.8 0 0], ... % Cue A, Rw, no mod
+    [1 0.6 0.6], ... % Cue A, Rw, mod
+    [1 0.6 0], ... % Cue A, no Rw, no mod
+    [1 0.8 0.4], ... % Cue A, no Rw, mod
+    [0 0 0.8], ... % Cue B, Rw, no mod
+    [0.6 0.6 1], ... % Cue B, Rw, mod
+    [0 0.6 1], ... % Cue B, no Rw, no mod
+    [0.4 0.8 1], ... % Cue B, no Rw, mod
+    [1 0.6 0], ... % Cue C
+    [1 1 0.4], ...
+    [1 0.6 0], ...
+    [1 1 0.4], ...
+    [0 0.6 1], ... % Cue D
+    [0.4 1 1], ...
+    [0 0.6 1], ...
+    [0.4 1 1]};
+lineStl = {'-', '-', '-', '-', ...
+    '-', '-', '-', '-', ...
+    '-', '-', '-', '-', ...
+    '-', '-', '-', '-'};
+lineWth = [1 0.75 1 0.75 1 0.75 1 0.75 1 0.75 1 0.75 1 0.75 1 0.75];
 
-load(matFile{1},'spikeBin','window');
-iPage = 0;
-for iFiles = 1:nFiles
-    [cellcd,cellname,~] = fileparts(matFile{iFiles});
+fontS = 4; % font size small
+fontM = 6; % font size middle
+fontL = 8; % font size large
+lineS = 0.2; % line width small
+lineM = 0.5; % line width middle
+lineL = 1; % line width large
+colorBlue = [0 153 227] ./ 255;
+colorLightBlue = [223 239 252] ./ 255;
+colorRed = [237 50 52] ./ 255;
+colorLightRed = [242 138 130] ./ 255;
+colorGray = [204 204 204] ./ 255;
+colorYellow = [255 243 3] ./ 255;
+tightInterval = [0.02 0.02];
+wideInterval = [0.07 0.07];
+nCol = 4;
+nRowSub = 8; % for the left column
+nRowMain = 5; % for the main figure
+markerS = 2.2;
+markerM = 4.4;
+markerL = 6.6;
+
+for iFile = 1:nFile
+    [cellDir,cellName,~] = fileparts(matFile{iFile});
+    cellDirSplit = regexp(cellDir,'\','split');
+    cellFigName = strcat(cellDirSplit(end-1),'_',cellDirSplit(end),'_',cellName);
     
-    cd(cellcd);
+    cd(cellDir);
+    load(matFile{iFile});
+    load('Events.mat');
     
-    load('Events.mat','nTrial','trialResult','blueOnsetTime');
-    lightTrial = length(blueOnsetTime);
-    load(matFile{iFiles},'xpt','ypt','pethconv');
-    ylims = 0;
-    
-%% PETH and Raster for epoch
-% Raster
-    axes('Position',axpt(mod(iFiles-1,nRow)+1,1,:)); % Raster
+    % Cell information
+    fHandle = figure('PaperUnits','centimeters','PaperPosition',[0 0 18.3 13.725]);
+    hText = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,1:2,[],wideInterval),tightInterval));
     hold on;
-    plot([0 0],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([0.5 0.5],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([1.5 1.5],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([4 4],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    for iChoice = find(trialResult~=0)
-        plot(xpt{iChoice},ypt{iChoice},...
-            'LineStyle','-','LineWidth',0.2,'Color',lineClr{iChoice});
-    end
-    set(gca,'box','off','TickDir','out','LineWidth',0.2,'FontSize',4, ...
-        'XLim',window,'XTick',[], ...
-        'YLim',[0 nTrial],'YTick',[0 nTrial],'YTickLabel',{'      ',nTrial});
-    ylabel('Trial','FontSize',4);
-
-% PETH
-    axes('Position',axpt(mod(iFiles-1,nRow)+1,2,:)); % PSTH
-    hold on;
-    plot([0 0],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([0.5 0.5],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([1.5 1.5],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    plot([4 4],[0.01 nTrial],'LineStyle',':','LineWidth',0.3,'Color',[0.8 0.8 0.8]);
-    ylims = ceil(max(pethconv(:))*1.1);
-    rectangle('Position', [0.5 ylims*0.95 1 ylims*0.05], 'LineStyle', 'none', 'FaceColor', [1 0.8 0]);
-    rectangle('Position', [4 ylims*0.95 0.1 ylims*0.05], 'LineStyle', 'none', 'FaceColor', [0 0.6 1]);
-    for jChoice = find(trialResult~=0)
-        plot(spikeBin,pethconv(jChoice,:),...
-            'LineStyle',lineStl{jChoice},'LineWidth',lineWth(jChoice),'Color',lineClr{jChoice});
-        
-    end
-    set(gca,'box','off','TickDir','out','LineWidth',0.2,'FontSize',4, ...
-        'XLim',window, 'XTick',[0 0.5 1.5 4 7], 'XTickLabel', {-0.5,0, 1, 3.5, 7}, ...
-        'YLim',[0 ylims], 'YTick',[0 ylims], 'YTickLabel',{'     ',ylims});
-    if (mod(iFiles,nRow)==0 | iFiles == nFiles)
-                xlabel('Time from cue onset (s)','FontSize',5);
-            end
-    ylabel('Rate (Hz)','FontSize',4);
-
-%% Tagging
-    clear xpttag ypttag bintag taghist time_tagstat H1_tagstat H2_tagstat p_tagstat;
-    load(matFile{iFiles},'xpttag','ypttag','binTag','tagHist','time_tagstat','H1_tagstat','H2_tagstat','p_tagstat');
-    if ~isempty(xpttag)
-        axes('Position',[axpt(mod(iFiles-1,nRow)+1,1,1)-0.35 axpt(mod(iFiles-1,nRow)+1,1,2) dx/5 dy]);
-            hold on;
-            plot(xpttag,ypttag,...
-                    'Marker','.','MarkerSize',2,'Color','k');
-            set(gca,'box','off','TickDir','out','LineWidth',0.2,'FontSize',4, ...
-                'XLim',win,'XTick',[], ...
-                'YLim',[0 lightTrial],'YTick',[0 lightTrial],'YTickLabel',{[],lightTrial});
-            ylabel('Trials');
-
-        axes('Position',[axpt(mod(iFiles-1,nRow)+1,2,1)-0.35 axpt(mod(iFiles-1,nRow)+1,2,2) dx/5 dy]);
-            hold on;
-            h = bar(binTag,tagHist,'histc');
-            ylims2 = ceil(max(tagHist(:))*1.1);
-            if ylims2 ==0; ylims2=1; end;
-            set(h,'FaceColor','k','EdgeAlpha',0);
-            set(gca,'XLim',win);
-            set(gca,'YLim',[0 ylims2],'YTick',[0 ylims2],'YColor','k');
-            set(gca,'Box','off','TickDir','out','LineWidth',0.2,'FontSize',4, ...
-                'XLim',win, 'XTick',[-20 0 100]);
-            if (mod(iFiles,nRow)==0 | iFiles == nFiles)
-                xlabel('Time (ms)');
-            end
-            ylabel('Rate (Hz)','FontSize',4);
-
-        axes('Position',[axpt(mod(iFiles-1,nRow)+1,1,1)-0.22 axpt(mod(iFiles-1,nRow)+1,2,2) dx/5 dy]);
-            hold on;
-            stairs(time_tagstat,H1_tagstat,'LineStyle','-','LineWidth',0.5,'Color',[0 0.66 1]);
-            stairs(time_tagstat,H2_tagstat,'LineStyle',':','LineWidth',0.5,'Color',[0 0 0]);
-            ylimst = max([H1_tagstat;H2_tagstat])*1.1;
-            if isempty(ylimst) | ylimst==0; ylimst=1; end;
-            set(gca,'Box','off','TickDir','out','FontSize',4);
-            set(gca,'XLim',[0 10],'XTick',[0 10]);
-            set(gca,'YLim',[0 ylimst],'YTick',[0 ylimst],'YTickLabel',{[0],num2str(ylimst,1)});
-            if (mod(iFiles,nRow)==0 | iFiles == nFiles)
-                xlabel('Time (ms)');
-            end
-            ylabel('H(t)');
-
-        axes('Position',[axpt(mod(iFiles-1,nRow)+1,1,1)-0.22 axpt(mod(iFiles-1,nRow)+1,1,2) dx/5 dy]);
-            hold on;
-            text(0,0.5,['p value for tag test: ',num2str(p_tagstat,2)],'FontSize',4,'interpreter','none');
-            if p_tagstat <= p_value
-                if H1_tagstat(end) >= H2_tagstat(end)
-                    text(0,0.3,['Activated neuron'],'FontSize',4,'interpreter','none');
-                else
-                    text(0,0.3,['Inhibited neuron'],'FontSize',4,'interpreter','none');
-                end
-            end
-            set(gca,'visible','off');
-    end
+    text(0,1.2,matFile{iFile}, 'FontSize',fontM, 'Interpreter','none');
+    text(0,0.9,['p_A = ',num2str(trialResult(1)/(trialResult(1)+trialResult(3)),2), ...
+        ', p_B = ',num2str(trialResult(5)/(trialResult(5)+trialResult(7)),2)], 'FontSize', fontS);
+    text(0,0.7,['Mean firing rate (baseline): ',num2str(fr_base,3), ' Hz'], 'FontSize',fontS);
+    text(0,0.55,['Mean firing rate (task): ',num2str(fr_task,3), ' Hz'], 'FontSize',fontS);
+    text(0,0.35,['Spike width: ',num2str(spkwth,3),' us'], 'FontSize',fontS);
+    text(0,0.2,['Half-valley width: ',num2str(hfvwth,3),' us'], 'FontSize',fontS);
+    text(0,0.05,['Peak valley ratio: ',num2str(spkpvr,3)], 'FontSize',fontS);
+    set(hText,'Visible','off');
     
-%% Waveform
-     load(matFile{iFiles},'spkwv','hfvwth','spkpvr','fr_base','fr_task');
-     ylims3 = [min(spkwv(:)) max(spkwv(:))];
-    
-    for ich = 1:4
-        axes('Position',[axpt(mod(iFiles-1,nRow)+1,1,1)-0.13+(ich-1)*dx/24*0.8 axpt(mod(iFiles-1,nRow)+1,2,2) dx/24*0.8 dy*0.8]);
-        plot(spkwv(ich,:),'LineStyle','-','LineWidth',0.1,'Color',[0.2 0.2 0.2]);
-        
-        set(gca,'XLim',[1 32]);
-        set(gca,'YLim',ylims3);
-        set(gca,'visible','off');
-        if ich==4
-            line([24 32],[ylims3(2)-50 ylims3(2)-50],'color','k','LineWidth',0.2); 
-            line([24 24],[ylims3(2)-50 ylims3(2)],'color','k','LineWidth',0.2);
+    % Waveform
+    yLimWaveform = [min(spkwv(:)) max(spkwv(:))];
+    for iCh = 1:4
+        hWaveform(iCh) = axes('Position',axpt(4,2,iCh,2,axpt(nCol,nRowSub,1,1:2,[],wideInterval),tightInterval));
+        plot(spkwv(iCh,:), 'LineWidth', lineL, 'Color','k');
+        if iCh == 4
+            line([24 32], [yLimWaveform(2)-50 yLimWaveform(2)-50], 'Color','k', 'LineWidth', lineM);
+            line([24 24],[yLimWaveform(2)-50 yLimWaveform(2)], 'Color','k', 'LineWidth',lineM);
         end
     end
+    set(hWaveform, 'Visible', 'off', ...
+        'XLim',[1 32], 'YLim',yLimWaveform*1.05);
     
-     axes('Position',[axpt(mod(iFiles-1,nRow)+1,1,1)-0.13 axpt(mod(iFiles-1,nRow)+1,1,2) dx/6 dy]);
+    %% Tagging
+    % Blue tag
+    if ~isempty(blueOnsetTime) && ~isempty(xptTagBlue{1})
+        nBlue = length(blueOnsetTime);
+        winBlue = [min(psthtimeTagBlue) max(psthtimeTagBlue)];
+                
+        % Blue tag raster
+        hTagBlue(1) = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,3:4,[],wideInterval),tightInterval));
+        plot(xptTagBlue{1}, yptTagBlue{1}, ...
+            'LineStyle', 'none', 'Marker', '.', 'MarkerSize', markerS, 'Color', 'k');
+        set(hTagBlue(1), 'XLim', winBlue, 'XTick', [], ...
+            'YLim', [0 nBlue], 'YTick', [0 nBlue], 'YTickLabel', {[], nBlue});
+        ylabel('Trials', 'FontSize', fontS);
+        
+        % Blue tag psth
+        hTagBlue(2) = axes('Position',axpt(1,2,1,2,axpt(nCol,nRowSub,1,3:4,[],wideInterval),tightInterval));
         hold on;
-         text(0,0.9,['Base firing rate: ',num2str(fr_base,3)],'FontSize',4,'interpreter','none');
-         text(0,0.7,['Task firing rate: ',num2str(fr_task,3)],'FontSize',4,'interpreter','none');
-         text(0,0.5,['Half-valley width: ',num2str(hfvwth,3),' us'],'FontSize',4,'interpreter','none');
-         text(0,0.3,['Peak valley ratio: ',num2str(spkpvr,3)],'FontSize',4,'interpreter','none');
-         set(gca,'visible','off');
-       
-%% Title and save image 
-    % File name
-    axes('Position',[axpt(mod(iFiles-1,nRow)+1,1,1)-0.35 axpt(mod(iFiles-1,nRow)+1,1,2)+dy+0.008 dx 0.05]);
-    text(0,0,matFile{iFiles},'FontSize',4,'interpreter','none');
-    set(gca,'Visible','off');
-    
-    if (mod(iFiles,nRow)==0 | iFiles == nFiles)
-        axes('Position',[axpt(1,1,1)+0.03 axpt(1,1,2)+dy+0.008 dx 0.05]);
-            text(0.25,0,'Preparation','FontSize',4,'interpreter','none','HorizontalAlignment','center');
-            text(1,0,'Cue','FontSize',4,'interpreter','none','HorizontalAlignment','center');
-            text(2.75,0,'Delay','FontSize',4,'interpreter','none','HorizontalAlignment','center');
-            text(4.5,0,'Reward','FontSize',4,'interpreter','none','HorizontalAlignment','center');
-            set(gca,'Visible','off','XLim',[0 8]);
-            
-        cd(rtdir);
-        if nargin == 0
-            cd('..');
-        end
-        iPage = iPage + 1;
-        cell_filename = regexp(cellcd,'\','split');
-        cellfile = strcat(cell_filename(end-1),'_',cell_filename(end),'_Raster_',num2str(iPage),'.tif');
-        print(gcf,'-dtiff','-r600',cellfile{1});
-        clf;
+        yLimBarBlue = ceil(max(psthTagBlue(:))*1.05+0.0001);
+        bar(2.5, 1000, 'BarWidth', 5, 'LineStyle', 'none', 'FaceColor', colorLightBlue);
+        rectangle('Position', [0 yLimBarBlue*0.925 5 yLimBarBlue*0.075], 'LineStyle', 'none', 'FaceColor', colorBlue);
+        hBarBlue = bar(psthtimeTagBlue, psthTagBlue, 'histc');
+        set(hBarBlue, 'FaceColor','k', 'EdgeAlpha',0);
+        set(hTagBlue(2), 'XLim', winBlue, 'XTick', [winBlue(1) 0 winBlue(2)], ...
+            'YLim', [0 yLimBarBlue], 'YTick', [0 yLimBarBlue], 'YTickLabel', {[], yLimBarBlue});
+        xlabel('Time (ms)', 'FontSize', fontS);
+        ylabel('Rate (Hz)', 'FontSize', fontS);
+        
+        % Blue tag hazard function
+        hTagBlue(3) = axes('Position',axpt(nCol,nRowSub,1,5,[],wideInterval));
+        hold on;
+        ylimH = min([ceil(max([H1_tagBlue;H2_tagBlue])*1100+0.0001)/1000 1]);
+        winHBlue = [0 ceil(max(time_tagBlue))];
+        stairs(time_tagBlue, H2_tagBlue, 'LineStyle',':', 'LineWidth', lineL, 'Color', 'k');
+        stairs(time_tagBlue, H1_tagBlue, 'LineStyle','-', 'LineWidth', lineL, 'Color', colorBlue);
+        text(winHBlue(2)*0.1,ylimH*1.1,['p = ',num2str(p_tagBlue,3),' (log-rank)'], 'FontSize',fontS, 'Interpreter','none');
+        set(hTagBlue(3), 'XLim', winHBlue, 'XTick', winHBlue, ...
+            'YLim', [0 ylimH], 'YTick', [0 ylimH], 'YTickLabel', {[], ylimH});
+        xlabel('Time (ms)', 'FontSize', fontS);
+        ylabel('H(t)', 'FontSize', fontS);
+        
+        set(hTagBlue, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS);
+        align_ylabel(hTagBlue)
     end
+
+    % Red tag
+    if ~isempty(redOnsetTime) && ~isempty(xptTagRed{1})
+        nRed = length(redOnsetTime);
+        winRed = [min(psthtimeTagRed) max(psthtimeTagRed)];
+                
+        % Red tag raster
+        hTagRed(1) = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,6:7,[],wideInterval),tightInterval));
+        plot(xptTagRed{1}, yptTagRed{1}, ...
+            'LineStyle', 'none', 'Marker', '.', 'MarkerSize', markerS, 'Color', 'k');
+        set(hTagRed(1), 'XLim', winRed, 'XTick', [], ...
+            'YLim', [0 nRed], 'YTick', [0 nRed], 'YTickLabel', {[], nRed});
+        ylabel('Trials', 'FontSize', fontS);
+        
+        % Red tag psth
+        hTagRed(2) = axes('Position',axpt(1,2,1,2,axpt(nCol,nRowSub,1,6:7,[],wideInterval),tightInterval));
+        hold on;
+        yLimBarRed = ceil(max(psthTagRed(:))*1.05+0.0001);
+        bar(250, 1000, 'BarWidth', 500, 'LineStyle', 'none', 'FaceColor', colorLightRed);
+        rectangle('Position', [0 yLimBarRed*0.925 500 yLimBarRed*0.075], 'LineStyle', 'none', 'FaceColor', colorRed);
+        hBarRed = bar(psthtimeTagRed, psthTagRed, 'histc');
+        set(hBarRed, 'FaceColor','k', 'EdgeAlpha',0);
+        set(hTagRed(2), 'XLim', winRed, 'XTick', [winRed(1) 0 winRed(2)], ...
+            'YLim', [0 yLimBarRed], 'YTick', [0 yLimBarRed], 'YTickLabel', {[], yLimBarRed});
+        xlabel('Time (ms)', 'FontSize', fontS);
+        ylabel('Rate (Hz)', 'FontSize', fontS);
+        
+        % Red tag hazard function
+        hTagRed(3) = axes('Position',axpt(nCol,nRowSub,1,8,[],wideInterval));
+        hold on;
+        ylimH = min([ceil(max([H1_tagRed;H2_tagRed])*1100+0.0001)/1000 1]);
+        winHRed = [0 ceil(max(time_tagRed))];
+        stairs(time_tagRed, H2_tagRed, 'LineStyle',':', 'LineWidth', lineL, 'Color', 'k');
+        stairs(time_tagRed, H1_tagRed, 'LineStyle','-', 'LineWidth', lineL, 'Color', colorRed);
+        text(winHRed(2)*0.1,ylimH*1.1,['p = ',num2str(p_tagRed,3),' (log-rank)'], 'FontSize',fontS, 'Interpreter','none');
+        set(hTagRed(3), 'XLim', winHRed, 'XTick', winHRed, ...
+            'YLim', [0 ylimH], 'YTick', [0 ylimH], 'YTickLabel', {[], ylimH});
+        xlabel('Time (ms)', 'FontSize', fontS);
+        ylabel('H(t)', 'FontSize', fontS);
+        set(hTagRed, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS);
+        align_ylabel(hTagRed)
+    end
+
+
+    %% Cue aligned
+    % Raster
+    hMain(1) = axes('Position',axpt(nCol,nRowMain,2:3,1:2,[],wideInterval));
+    hold on;
+    for iDur = 2:4
+        plot([eventDuration(iDur) eventDuration(iDur)],[0.01 nTrial], ...
+            'LineStyle',':', 'LineWidth', lineM, 'Color', colorGray);
+    end
+    for iType = find(trialResult~=0)
+        plot(xpt{iType}, ypt{iType}, ...
+            'Marker', '.', 'MarkerSize', markerS, 'LineStyle', 'none', 'Color', lineClr{iType});
+    end
+    set(hMain(1), 'YLim', [0 nTrial], 'YTick', [0 nTrial], 'YTickLabel', {[], nTrial});
+    ylabel('Trial', 'FontSize', fontS);
+    
+    % Psth 1 (Cue x Rw | Mod=0)
+    hMain(2) = axes('Position',axpt(nCol,nRowMain,2:3,3,[],wideInterval));
+    hold on;
+    ylimpsth = ceil(max(psthconv(:))*1.1+0.0001);
+    for iDur = 2:4
+        plot([eventDuration(iDur) eventDuration(iDur)],[0.01 nTrial], ...
+            'LineStyle',':', 'LineWidth', lineM, 'Color', colorGray);
+    end
+    rectangle('Position', [eventDuration(2) ylimpsth*0.925 eventDuration(3)-eventDuration(2) ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorYellow);
+    rectangle('Position', [eventDuration(4) ylimpsth*0.925 0.1 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+    for jType = find(trialResult~=0)
+        if mod(jType,2)==1
+            plot(psthtime, psthconv(jType,:), ...
+                'LineStyle', lineStl{jType}, 'LineWidth', lineWth(jType), 'Color', lineClr{jType});
+        end
+    end
+    set(hMain(2), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
+    title('Cue x Rw | Mod = 0', 'FontSize', fontM);
+    ylabel('Rate (Hz)', 'FontSize', fontS);
+    
+    % Psth 2 (Cue x Mod)
+    hMain(3) = axes('Position',axpt(nCol,nRowMain,2:3,4,[],wideInterval));
+    hold on;
+    ylimpsth = ceil(max(psthconvCue(:))*1.1+0.0001);
+    
+    for iDur = 2:4
+        plot([eventDuration(iDur) eventDuration(iDur)],[0.01 nTrial], ...
+            'LineStyle',':', 'LineWidth', lineM, 'Color', colorGray);
+    end
+    rectangle('Position', [eventDuration(1) ylimpsth*0.925 5 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorLightRed);
+    rectangle('Position', [eventDuration(2) ylimpsth*0.85 eventDuration(3)-eventDuration(2) ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorYellow);
+    rectangle('Position', [eventDuration(4) ylimpsth*0.85 0.1 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+    for jType = find(cueResult~=0)
+        plot(psthtime, psthconvCue(jType,:), ...
+            'LineStyle', lineStl{floor((jType-1)/2)*4+mod(jType-1,2)+1}, 'LineWidth', lineWth(floor((jType-1)/2)*4+mod(jType-1,2)+1), 'Color', lineClr{floor((jType-1)/2)*4+mod(jType-1,2)+1});
+    end
+    set(hMain(3), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
+    title('Cue x Mod', 'FontSize', fontM);
+    xlabel('Time from cue onset (s)', 'FontSize', fontS);
+    ylabel('Rate (Hz)', 'FontSize', fontS);
+    
+    set(hMain, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS, ...
+        'XLim', eventDuration([1 end]), 'XTick', eventDuration([1:4 end]));
+    
+    %% Reward aligned
+    %Reward raster
+    hRw(1) = axes('Position',axpt(nCol,nRowMain,4,1:2,[],wideInterval));
+    hold on;
+    plot([0 0], [0.01 nTrial], ...
+        'LineStyle',':', 'LineWidth',lineM, 'Color', colorGray);
+    for iType = find(trialResult~=0)
+        plot(xptRw{iType}, yptRw{iType}, ...
+            'Marker', '.', 'MarkerSize', markerS, 'LineStyle', 'none', 'Color', lineClr{iType});
+    end
+    set(hRw(1), 'YLim', [0 nTrialRw], 'YTick', [0 nTrialRw], 'YTickLabel', {[], nTrialRw});
+    
+    % PsthRw 1 (Cue x Rw | Mod=0)
+    hRw(2) = axes('Position',axpt(nCol,nRowMain,4,3,[],wideInterval));
+    hold on;
+    ylimpsth = ceil(max(psthconvRw(:))*1.1+0.0001);
+    plot([0 0], [0.01 nTrial], ...
+        'LineStyle',':', 'LineWidth',lineM, 'Color', colorGray);
+    rectangle('Position', [0 ylimpsth*0.925 0.1/3*4 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+    for jType = find(trialResult~=0)
+        if mod(jType,2)==1
+            plot(psthtimeRw, psthconvRw(jType,:), ...
+                'LineStyle', lineStl{jType}, 'LineWidth', lineWth(jType), 'Color', lineClr{jType});
+        end
+    end
+    set(hRw(2), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
+    title('Cue x Rw | Mod = 0', 'FontSize', fontM);
+    ylabel('Rate (Hz)', 'FontSize', fontS);
+    
+    % PsthRw 2 (Rw x Mod | Cue=A)
+    hRw(3) = axes('Position',axpt(nCol,nRowMain,4,4,[],wideInterval));
+    hold on;
+    ylimpsth = ceil(max(psthconvRw(:))*1.1+0.0001);
+    plot([0 0], [0.01 nTrial], ...
+        'LineStyle',':', 'LineWidth',lineM, 'Color', colorGray);
+    rectangle('Position', [0 ylimpsth*0.85 0.1/3*4 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+    rectangle('Position', [winRw(1)/1000+1 ylimpsth*0.925 3.5 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorLightRed);
+    for jType = 1:4
+        if trialResult(jType)~=0
+            plot(psthtimeRw, psthconvRw(jType,:), ...
+                'LineStyle', lineStl{jType}, 'LineWidth', lineWth(jType), 'Color', lineClr{jType});
+        end
+    end
+    set(hRw(3), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
+    title('Rw x Mod | Cue=A', 'FontSize', fontM);
+    ylabel('Rate (Hz)', 'FontSize', fontS);
+    
+    % PsthRw 3 (Rw x Mod | Cue=B)
+    hRw(4) = axes('Position',axpt(nCol,nRowMain,4,5,[],wideInterval));
+    hold on;
+    ylimpsth = ceil(max(psthconvRw(:))*1.1+0.0001);
+    plot([0 0], [0.01 nTrial], ...
+        'LineStyle',':', 'LineWidth',lineM, 'Color', colorGray);
+    rectangle('Position', [0 ylimpsth*0.85 0.1/3*4 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+        rectangle('Position', [winRw(1)/1000+1 ylimpsth*0.925 3.5 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorLightRed);
+    for jType = 5:8
+        if trialResult(jType)~=0
+            plot(psthtimeRw, psthconvRw(jType,:), ...
+                'LineStyle', lineStl{jType}, 'LineWidth', lineWth(jType), 'Color', lineClr{jType});
+        end
+    end
+    set(hRw(4), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
+    title('Rw x Mod | Cue = B', 'FontSize', fontM);
+    xlabel('Time from reward onset (s)', 'FontSize', fontS);
+    ylabel('Rate (Hz)', 'FontSize', fontS);
+    
+    set(hRw, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS, ...
+        'XLim', [winRw(1)/1000+1 winRw(2)/1000-1], 'XTick', [winRw(1)/1000+1 0 winRw(2)/1000-1]);
+
+    print(gcf,'-dtiff','-r300',[cellFigName{1},'.tif']);
+    close;
 end
-close all;
 cd(rtdir);
