@@ -56,7 +56,7 @@ for iCell = 1:nCell
 
     % Load event variables
     load('Events.mat');
-    win = [-1 maxTrialDuration]*10^3; % unit: msec, window for binning
+    win = [eventDuration(1)-0.5 maxTrialDuration]*10^3; % unit: msec, window for binning
     
     % Load spike data
     spikeData = Data(ttData{iCell})/10; % unit: msec
@@ -66,7 +66,7 @@ for iCell = 1:nCell
     fr_task = sum(histc(spikeData,taskTime))/diff(taskTime/1000);
     
     % spike data aligned to events
-    spikeTime = spikeWin(spikeData, eventTime(:,1), win);
+    spikeTime = spikeWin(spikeData, eventTime(:,2), win);
     spikeTimeRw = spikeWin(spikeData, rewardLickTime, winRw);
     inRw = ~isnan(rewardLickTime);
 
