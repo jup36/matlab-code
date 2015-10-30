@@ -113,86 +113,90 @@ for iFile = 1:nFile
     
     %% Tagging
     % Blue tag
-    if ~isempty(blueOnsetTime)
+    if ~isempty(blueOnsetTime) && ~isempty(xptTagBlue{1})
         nBlue = length(blueOnsetTime);
         winBlue = [min(psthtimeTagBlue) max(psthtimeTagBlue)];
                 
         % Blue tag raster
-        hTag(1) = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,3:4,[],wideInterval),tightInterval));
+        hTagBlue(1) = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,3:4,[],wideInterval),tightInterval));
         plot(xptTagBlue{1}, yptTagBlue{1}, ...
             'LineStyle', 'none', 'Marker', '.', 'MarkerSize', markerS, 'Color', 'k');
-        set(hTag(1), 'XLim', winBlue, 'XTick', [], ...
+        set(hTagBlue(1), 'XLim', winBlue, 'XTick', [], ...
             'YLim', [0 nBlue], 'YTick', [0 nBlue], 'YTickLabel', {[], nBlue});
         ylabel('Trials', 'FontSize', fontS);
         
         % Blue tag psth
-        hTag(2) = axes('Position',axpt(1,2,1,2,axpt(nCol,nRowSub,1,3:4,[],wideInterval),tightInterval));
+        hTagBlue(2) = axes('Position',axpt(1,2,1,2,axpt(nCol,nRowSub,1,3:4,[],wideInterval),tightInterval));
         hold on;
         yLimBarBlue = ceil(max(psthTagBlue(:))*1.05+0.0001);
         bar(2.5, 1000, 'BarWidth', 5, 'LineStyle', 'none', 'FaceColor', colorLightBlue);
         rectangle('Position', [0 yLimBarBlue*0.925 5 yLimBarBlue*0.075], 'LineStyle', 'none', 'FaceColor', colorBlue);
         hBarBlue = bar(psthtimeTagBlue, psthTagBlue, 'histc');
         set(hBarBlue, 'FaceColor','k', 'EdgeAlpha',0);
-        set(hTag(2), 'XLim', winBlue, 'XTick', [winBlue(1) 0 winBlue(2)], ...
+        set(hTagBlue(2), 'XLim', winBlue, 'XTick', [winBlue(1) 0 winBlue(2)], ...
             'YLim', [0 yLimBarBlue], 'YTick', [0 yLimBarBlue], 'YTickLabel', {[], yLimBarBlue});
         xlabel('Time (ms)', 'FontSize', fontS);
         ylabel('Rate (Hz)', 'FontSize', fontS);
         
         % Blue tag hazard function
-        hTag(3) = axes('Position',axpt(nCol,nRowSub,1,5,[],wideInterval));
+        hTagBlue(3) = axes('Position',axpt(nCol,nRowSub,1,5,[],wideInterval));
         hold on;
         ylimH = min([ceil(max([H1_tagBlue;H2_tagBlue])*1100+0.0001)/1000 1]);
         winHBlue = [0 ceil(max(time_tagBlue))];
         stairs(time_tagBlue, H2_tagBlue, 'LineStyle',':', 'LineWidth', lineL, 'Color', 'k');
         stairs(time_tagBlue, H1_tagBlue, 'LineStyle','-', 'LineWidth', lineL, 'Color', colorBlue);
         text(winHBlue(2)*0.1,ylimH*1.1,['p = ',num2str(p_tagBlue,3),' (log-rank)'], 'FontSize',fontS, 'Interpreter','none');
-        set(hTag(3), 'XLim', winHBlue, 'XTick', winHBlue, ...
+        set(hTagBlue(3), 'XLim', winHBlue, 'XTick', winHBlue, ...
             'YLim', [0 ylimH], 'YTick', [0 ylimH], 'YTickLabel', {[], ylimH});
         xlabel('Time (ms)', 'FontSize', fontS);
         ylabel('H(t)', 'FontSize', fontS);
+        
+        set(hTagBlue, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS);
+        align_ylabel(hTagBlue)
     end
 
     % Red tag
-    if ~isempty(redOnsetTime)
+    if ~isempty(redOnsetTime) && ~isempty(xptTagRed{1})
         nRed = length(redOnsetTime);
         winRed = [min(psthtimeTagRed) max(psthtimeTagRed)];
                 
         % Red tag raster
-        hTag(4) = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,6:7,[],wideInterval),tightInterval));
+        hTagRed(1) = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,6:7,[],wideInterval),tightInterval));
         plot(xptTagRed{1}, yptTagRed{1}, ...
             'LineStyle', 'none', 'Marker', '.', 'MarkerSize', markerS, 'Color', 'k');
-        set(hTag(4), 'XLim', winRed, 'XTick', [], ...
+        set(hTagRed(1), 'XLim', winRed, 'XTick', [], ...
             'YLim', [0 nRed], 'YTick', [0 nRed], 'YTickLabel', {[], nRed});
         ylabel('Trials', 'FontSize', fontS);
         
         % Red tag psth
-        hTag(5) = axes('Position',axpt(1,2,1,2,axpt(nCol,nRowSub,1,6:7,[],wideInterval),tightInterval));
+        hTagRed(2) = axes('Position',axpt(1,2,1,2,axpt(nCol,nRowSub,1,6:7,[],wideInterval),tightInterval));
         hold on;
         yLimBarRed = ceil(max(psthTagRed(:))*1.05+0.0001);
         bar(250, 1000, 'BarWidth', 500, 'LineStyle', 'none', 'FaceColor', colorLightRed);
         rectangle('Position', [0 yLimBarRed*0.925 500 yLimBarRed*0.075], 'LineStyle', 'none', 'FaceColor', colorRed);
         hBarRed = bar(psthtimeTagRed, psthTagRed, 'histc');
         set(hBarRed, 'FaceColor','k', 'EdgeAlpha',0);
-        set(hTag(5), 'XLim', winRed, 'XTick', [winRed(1) 0 winRed(2)], ...
+        set(hTagRed(2), 'XLim', winRed, 'XTick', [winRed(1) 0 winRed(2)], ...
             'YLim', [0 yLimBarRed], 'YTick', [0 yLimBarRed], 'YTickLabel', {[], yLimBarRed});
         xlabel('Time (ms)', 'FontSize', fontS);
         ylabel('Rate (Hz)', 'FontSize', fontS);
         
         % Red tag hazard function
-        hTag(6) = axes('Position',axpt(nCol,nRowSub,1,8,[],wideInterval));
+        hTagRed(3) = axes('Position',axpt(nCol,nRowSub,1,8,[],wideInterval));
         hold on;
         ylimH = min([ceil(max([H1_tagRed;H2_tagRed])*1100+0.0001)/1000 1]);
         winHRed = [0 ceil(max(time_tagRed))];
         stairs(time_tagRed, H2_tagRed, 'LineStyle',':', 'LineWidth', lineL, 'Color', 'k');
         stairs(time_tagRed, H1_tagRed, 'LineStyle','-', 'LineWidth', lineL, 'Color', colorRed);
         text(winHRed(2)*0.1,ylimH*1.1,['p = ',num2str(p_tagRed,3),' (log-rank)'], 'FontSize',fontS, 'Interpreter','none');
-        set(hTag(6), 'XLim', winHRed, 'XTick', winHRed, ...
+        set(hTagRed(3), 'XLim', winHRed, 'XTick', winHRed, ...
             'YLim', [0 ylimH], 'YTick', [0 ylimH], 'YTickLabel', {[], ylimH});
         xlabel('Time (ms)', 'FontSize', fontS);
         ylabel('H(t)', 'FontSize', fontS);
+        set(hTagRed, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS);
+        align_ylabel(hTagRed)
     end
-    set(hTag, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS);
-    align_ylabel(hTag)
+
 
     %% Cue aligned
     % Raster
