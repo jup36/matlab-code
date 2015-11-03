@@ -66,6 +66,7 @@ colorRed = [237 50 52] ./ 255;
 colorLightRed = [242 138 130] ./ 255;
 colorGray = [204 204 204] ./ 255;
 colorYellow = [255 243 3] ./ 255;
+colorLightYellow = [230 251 133] ./ 255;
 tightInterval = [0.02 0.02];
 wideInterval = [0.07 0.07];
 nCol = 4;
@@ -75,12 +76,15 @@ markerS = 2.2;
 markerM = 4.4;
 markerL = 6.6;
 
+pthreshold = 0.05;
+
 for iFile = 1:nFile
     [cellDir,cellName,~] = fileparts(matFile{iFile});
     cellDirSplit = regexp(cellDir,'\','split');
     cellFigName = strcat(cellDirSplit(end-1),'_',cellDirSplit(end),'_',cellName);
     
     cd(cellDir);
+    clear regRw_cr_mod regRw_crm
     load(matFile{iFile});
     load('Events.mat');
     
@@ -221,8 +225,18 @@ for iFile = 1:nFile
         plot([eventDuration(iDur) eventDuration(iDur)],[0.01 nTrial], ...
             'LineStyle',':', 'LineWidth', lineM, 'Color', colorGray);
     end
-    rectangle('Position', [eventDuration(2) ylimpsth*0.925 eventDuration(3)-eventDuration(2) ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorYellow);
-    rectangle('Position', [eventDuration(4) ylimpsth*0.925 0.1 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+%     rectangle('Position', [eventDuration(2) ylimpsth*0.925 eventDuration(3)-eventDuration(2) ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorYellow);
+%     rectangle('Position', [eventDuration(4) ylimpsth*0.925 0.1 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+    p_cr = double(reg_cr_nomod.p < pthreshold); p_cr(p_cr==0) = NaN;
+    plot(reg_cr_nomod.time/1000, p_cr(1,:)*ylimpsth*0.95, ...
+        'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+        'MarkerFaceColor', colorYellow, 'Color', colorYellow);
+    plot(reg_cr_nomod.time/1000, p_cr(2,:)*ylimpsth*0.90, ...
+        'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+        'MarkerFaceColor', colorBlue, 'Color', colorBlue);
+    plot(reg_cr_nomod.time/1000, p_cr(3,:)*ylimpsth*0.85, ...
+        'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+        'MarkerFaceColor', colorGray, 'Color', colorGray);
     for jType = find(trialResult~=0)
         if mod(jType,2)==1
             plot(psthtime, psthconv(jType,:), ...
@@ -237,26 +251,64 @@ for iFile = 1:nFile
     hMain(3) = axes('Position',axpt(nCol,nRowMain,2:3,4,[],wideInterval));
     hold on;
     ylimpsth = ceil(max(psthconvCue(:))*1.1+0.0001);
-    
     for iDur = 2:4
         plot([eventDuration(iDur) eventDuration(iDur)],[0.01 nTrial], ...
             'LineStyle',':', 'LineWidth', lineM, 'Color', colorGray);
     end
-    rectangle('Position', [eventDuration(1) ylimpsth*0.925 5 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorLightRed);
-    rectangle('Position', [eventDuration(2) ylimpsth*0.85 eventDuration(3)-eventDuration(2) ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorYellow);
-    rectangle('Position', [eventDuration(4) ylimpsth*0.85 0.1 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+%     rectangle('Position', [eventDuration(1) ylimpsth*0.925 5 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorLightRed);
+%     rectangle('Position', [eventDuration(2) ylimpsth*0.85 eventDuration(3)-eventDuration(2) ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorYellow);
+%     rectangle('Position', [eventDuration(4) ylimpsth*0.85 0.1 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+
+    if exist('reg_cr_mod')
+        p_cr_mod = double(reg_cr_mod.p < pthreshold); p_cr_mod(p_cr_mod==0) = NaN;
+        p_crm = double(reg_crm.p < pthreshold); p_crm(p_crm==0) = NaN;
+        plot(reg_cr_nomod.time/1000, p_cr(1,:)*ylimpsth*0.95, ...
+            'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+            'MarkerFaceColor', colorYellow, 'Color', colorYellow);
+        plot(reg_cr_mod.time/1000, p_cr_mod(1,:)*ylimpsth*0.90, ...
+            'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+            'MarkerFaceColor', colorLightYellow, 'Color', colorLightYellow);
+        plot(reg_crm.time/1000, p_crm(3,:)*ylimpsth*0.05, ...
+            'LineStyle', 'none', 'Marker', '^', 'MarkerSize', markerS, ... 
+            'MarkerFaceColor', colorRed, 'Color', colorRed);
+        plot(reg_crm.time/1000, p_crm(5,:)*ylimpsth*0.10, ...
+            'LineStyle', 'none', 'Marker', '^', 'MarkerSize', markerS, ... 
+            'MarkerFaceColor', colorLightRed, 'Color', colorLightRed);
+    end
     for jType = find(cueResult~=0)
         plot(psthtime, psthconvCue(jType,:), ...
             'LineStyle', lineStl{floor((jType-1)/2)*4+mod(jType-1,2)+1}, 'LineWidth', lineWth(floor((jType-1)/2)*4+mod(jType-1,2)+1), 'Color', lineClr{floor((jType-1)/2)*4+mod(jType-1,2)+1});
     end
     set(hMain(3), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
     title('Cue x Mod', 'FontSize', fontM);
-    xlabel('Time from cue onset (s)', 'FontSize', fontS);
     ylabel('Rate (Hz)', 'FontSize', fontS);
+    
+    % Psth 3 (Regression plot)
+    hMain(4) = axes('Position',axpt(nCol,nRowMain,2:3,5,[],wideInterval));
+    hold on;
+    ylimRegress = [min(reg_cr_nomod.sse(1,:)) max(reg_cr_nomod.sse(1,:))]*1.1;
+    hFill(1) = fill(reg_cr_nomod.timesse/1000,reg_cr_nomod.sse(1,:),colorYellow);
+    plot(win/1000, [0 0], 'LineStyle', ':', 'LineWidth', lineS, 'Color', colorGray);
+    plot(reg_cr_nomod.time/1000,reg_cr_nomod.src(1,:), ...
+        'LineWidth', lineL, 'Color', colorYellow);
+    if exist('reg_cr_mod')
+        ylimRegress = [min([reg_cr_nomod.sse(1,:) reg_cr_mod.sse(1,:)]) max([reg_cr_nomod.sse(1,:) reg_cr_mod.sse(1,:)])]*1.1;
+        hFill(2) = fill(reg_cr_mod.timesse/1000,reg_cr_mod.sse(1,:),colorLightYellow);
+        plot(reg_cr_mod.time/1000,reg_cr_mod.src(1,:), ...
+            'LineWidth', lineL, 'Color', colorLightYellow);
+        
+        hFill(3) = fill(reg_crm.timesse/1000,reg_crm.sse(5,:),colorLightRed);
+        plot(reg_crm.time/1000,reg_crm.src(5,:), ...
+            'LineWidth', lineL, 'Color', colorLightRed);
+    end
+    set(hFill, 'LineStyle', 'none', 'FaceAlpha', 0.5);
+    set(hMain(4), 'YLim', ylimRegress);
+    xlabel('Time from cue onset (s)', 'FontSize', fontS);
+    ylabel('SRC', 'FontSize', fontS);
     
     set(hMain, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS, ...
         'XLim', eventDuration([1 end]), 'XTick', eventDuration([1:4 end]));
-    
+  
     %% Reward aligned
     %Reward raster
     hRw(1) = axes('Position',axpt(nCol,nRowMain,4,1:2,[],wideInterval));
@@ -275,7 +327,17 @@ for iFile = 1:nFile
     ylimpsth = ceil(max(psthconvRw(:))*1.1+0.0001);
     plot([0 0], [0.01 nTrial], ...
         'LineStyle',':', 'LineWidth',lineM, 'Color', colorGray);
-    rectangle('Position', [0 ylimpsth*0.925 0.1/3*4 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+%     rectangle('Position', [0 ylimpsth*0.925 0.1/3*4 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+    pRw_cr = double(regRw_cr_nomod.p < pthreshold); pRw_cr(pRw_cr==0) = NaN;
+    plot(regRw_cr_nomod.time/1000, pRw_cr(1,:)*ylimpsth*0.95, ...
+        'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+        'MarkerFaceColor', colorYellow, 'Color', colorYellow);
+    plot(regRw_cr_nomod.time/1000, pRw_cr(2,:)*ylimpsth*0.90, ...
+        'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+        'MarkerFaceColor', colorBlue, 'Color', colorBlue);
+    plot(regRw_cr_nomod.time/1000, pRw_cr(3,:)*ylimpsth*0.85, ...
+        'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+        'MarkerFaceColor', colorGray, 'Color', colorGray);
     for jType = find(trialResult~=0)
         if mod(jType,2)==1
             plot(psthtimeRw, psthconvRw(jType,:), ...
@@ -292,8 +354,24 @@ for iFile = 1:nFile
     ylimpsth = ceil(max(psthconvRw(:))*1.1+0.0001);
     plot([0 0], [0.01 nTrial], ...
         'LineStyle',':', 'LineWidth',lineM, 'Color', colorGray);
-    rectangle('Position', [0 ylimpsth*0.85 0.1/3*4 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
-    rectangle('Position', [winRw(1)/1000+1 ylimpsth*0.925 3.5 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorLightRed);
+%     rectangle('Position', [0 ylimpsth*0.85 0.1/3*4 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorBlue);
+%     rectangle('Position', [winRw(1)/1000+1 ylimpsth*0.925 3.5 ylimpsth*0.075], 'LineStyle','none', 'FaceColor', colorLightRed);
+    if exist('reg_cr_mod')
+        pRw_cr_mod = double(regRw_cr_mod.p < pthreshold); pRw_cr_mod(pRw_cr_mod==0) = NaN;
+        pRw_crm = double(regRw_crm.p < pthreshold); pRw_crm(pRw_crm==0) = NaN;
+        plot(regRw_cr_nomod.time/1000, pRw_cr(2,:)*ylimpsth*0.95, ...
+            'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+            'MarkerFaceColor', colorBlue, 'Color', colorBlue);
+        plot(regRw_cr_mod.time/1000, pRw_cr_mod(2,:)*ylimpsth*0.90, ...
+            'LineStyle', 'none', 'Marker', 'v', 'MarkerSize', markerS, ... 
+            'MarkerFaceColor', colorLightBlue, 'Color', colorLightBlue);
+        plot(regRw_crm.time/1000, pRw_crm(3,:)*ylimpsth*0.05, ...
+            'LineStyle', 'none', 'Marker', '^', 'MarkerSize', markerS, ... 
+            'MarkerFaceColor', colorRed, 'Color', colorRed);
+        plot(regRw_crm.time/1000, pRw_crm(6,:)*ylimpsth*0.10, ...
+            'LineStyle', 'none', 'Marker', '^', 'MarkerSize', markerS, ... 
+            'MarkerFaceColor', colorLightRed, 'Color', colorLightRed);
+    end
     for jType = 1:4
         if trialResult(jType)~=0
             plot(psthtimeRw, psthconvRw(jType,:), ...

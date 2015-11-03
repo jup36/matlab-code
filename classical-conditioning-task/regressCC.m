@@ -49,25 +49,25 @@ for iFile = 1:nFile
 
     [reg_time, reg_spk] = spikeBin(spikeTime, win, binWindow, binStep);
        
-    
+    cue = cue-1;
     nomod = (modulation==0);
     mod = (modulation==1);
     inRw = ~isnan(rewardLickTime);
     
     % regression (cue, reward | modulation==0)
     if any(nomod)
-        reg_cr_nomod = slideReg(reg_time, reg_spk(nomod,:), [cue(nomod) reward(nomod)]);
-        regRw_cr_nomod = slideReg(reg_time, reg_spk(nomod & inRw,:), [cue(nomod & inRw) reward(nomod & inRw)]);
+        reg_cr_nomod = slideReg(reg_time, reg_spk(nomod,:), [cue(nomod) reward(nomod) cue(nomod).*reward(nomod)]);
+        regRw_cr_nomod = slideReg(reg_time, reg_spk(nomod & inRw,:), [cue(nomod & inRw) reward(nomod & inRw) cue(nomod & inRw).*reward(nomod & inRw)]);
         save(matFile{iFile}, 'reg_cr_nomod', 'regRw_cr_nomod', '-append');
     end
     
     % regression (cue, reward | modulation==1)
     % regression (cue, reward, modulation)
     if any(mod)
-        reg_cr_mod = slideReg(reg_time, reg_spk(mod,:), [cue(mod) reward(mod)]);
-        reg_crm = slideReg(reg_time, reg_spk, [cue reward modulation cue.*modulation reward.*modulation]);
-        regRw_cr_mod = slideReg(reg_time, reg_spk(mod & inRw,:), [cue(mod & inRw) reward(mod & inRw)]);
-        regRw_crm = slideReg(reg_time, reg_spk(inRw,:), [cue(inRw) reward(inRw) modulation(inRw) cue(inRw).*modulation(inRw) reward(inRw).*modulation(inRw)]);
+        reg_cr_mod = slideReg(reg_time, reg_spk(mod,:), [cue(mod) reward(mod) cue(mod).*reward(mod)]);
+        reg_crm = slideReg(reg_time, reg_spk, [cue reward modulation cue.*reward cue.*modulation reward.*modulation]);
+        regRw_cr_mod = slideReg(reg_time, reg_spk(mod & inRw,:), [cue(mod & inRw) reward(mod & inRw) cue(mod & inRw).*reward(mod & inRw)]);
+        regRw_crm = slideReg(reg_time, reg_spk(inRw,:), [cue(inRw) reward(inRw) modulation(inRw) cue(inRw).*reward(inRw) cue(inRw).*modulation(inRw) reward(inRw).*modulation(inRw)]);
         save(matFile{iFile}, 'reg_cr_mod', 'reg_crm', 'regRw_cr_mod', 'regRw_crm', '-append');
     end
 end
@@ -94,6 +94,12 @@ for iBin = 1:nBin
     sse(:,iBin) = stats.se(2:end) .* predStd(:,iBin);
     p(:,iBin) = stats.p(2:end);
 end
+
+outRange = (abs(src) > 100);
+src(outRange) = 0;
+sse(outRange) = 0;
+p(outRange) = 1;
+
 timesse = [time flip(time)];
 sse = [src-1.96*sse flip(src+1.96*sse,2)];
 
