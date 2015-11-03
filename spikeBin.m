@@ -11,8 +11,8 @@ function [time, spk] = spikeBin(spikeTime,timeWindow,binWindow,binStep)
 % Nov. 2015
 narginchk(4,4);
 
-bin = [timeWindow(1):binStep:(timeWindow(2)-binWindow/2); ...
-    (timeWindow(1)+binWindow/2):binStep:timeWindow(2)]';
+bin = [timeWindow(1):binStep:(timeWindow(2)-binWindow); ...
+    (timeWindow(1)+binWindow):binStep:timeWindow(2)]';
 time = (timeWindow(1)+binWindow/2):binStep:(timeWindow(2)-binWindow/2);
 nBin = size(bin,1);
 nTrial = size(spikeTime,1);
