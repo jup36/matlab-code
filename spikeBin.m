@@ -16,6 +16,13 @@ bin = [timeWindow(1):binStep:(timeWindow(2)-binWindow); ...
 time = (timeWindow(1)+binWindow/2):binStep:(timeWindow(2)-binWindow/2);
 nBin = size(bin,1);
 nTrial = size(spikeTime,1);
+nCell = length(spikeTime);
+
+for iCell = 1:nCell
+    if isempty(spikeTime{iCell}); 
+        spikeTime{iCell}=NaN;
+    end
+end
 
 spk = zeros(nTrial,nBin);
 for iBin = 1:nBin
