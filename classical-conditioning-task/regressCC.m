@@ -40,6 +40,7 @@ rtdir = pwd;
 nFile = length(matFile);
 
 for iFile = 1:nFile
+    disp(['### Analyzing ',matFile{iFile},'...']);
     [cellDir,cellName,~] = fileparts(matFile{iFile});
 
     cd(cellDir);
@@ -70,6 +71,7 @@ for iFile = 1:nFile
         save(matFile{iFile}, 'reg_cr_mod', 'reg_crm', 'regRw_cr_mod', 'regRw_crm', '-append');
     end
 end
+disp('### Regression analysis done!');
 end
     
 function reg = slideReg(time, spk, predictor)
