@@ -20,12 +20,12 @@ nCell = length(spikeTime);
 
 for iCell = 1:nCell
     if isempty(spikeTime{iCell}); 
-        spikeTime{iCell}=0;
+        spikeTime{iCell}=NaN;
     end
 end
 
 spk = zeros(nTrial,nBin);
 for iBin = 1:nBin
-    spkTemp = cellfun(@(x) histc(x,bin(iBin,:)), spikeTime,'UniformOutput',false)
+    spkTemp = cellfun(@(x) histc(x,bin(iBin,:)), spikeTime,'UniformOutput',false);
     spk(:,iBin) = cellfun(@(x) x(1), spkTemp);
 end
