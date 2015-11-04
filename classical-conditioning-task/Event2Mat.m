@@ -1,11 +1,11 @@
-function Event2Mat(sessionFolder)
+function Event2Mat(sessionFolder,modOff)
 % Event2Mat Converts data from Neuralynx NEV files to Matlab mat files
 
 % Make lists of event files
-narginchk(0, 1);
+narginchk(0, 2);
 if nargin == 0
     eventFile = FindFiles('Events.nev','CheckSubdirs',0);
-elseif nargin == 1
+elseif nargin >= 1
     if ~iscell(sessionFolder)
         disp('Input argument is wrong. It should be cell array.');
         return;
@@ -25,6 +25,9 @@ end
 if isempty(eventFile)
     disp('Event file does not exist!');
     return;
+end
+if nargin < 2
+    modOff = 0;
 end
 
 nFile = length(eventFile);
@@ -119,6 +122,10 @@ for iFile = 1:nFile
     reward(errorTrial | notValidTrial) = [];
     modulation(errorTrial | notValidTrial) = [];
     rewardLickTime(errorTrial | notValidTrial) = [];
+    
+    if modOff==1
+        modulation(modulation==1)=0;
+    end
        
     nTrial = size(eventTime,1);
     nTrialRw = sum(~isnan(rewardLickTime));
