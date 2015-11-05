@@ -37,8 +37,8 @@ end
 nFile = length(matFile);
 
 % make variables 
-dCue = zeros(nFile,2);
-dRw = zeros(nFile,2);
+dCue = zeros(nFile,4);
+dRw = zeros(nFile,8);
 cueWindow = [0 2]*10^3;
 cueWinLength = diff(cueWindow);
 rewardWindow = [0 1]*10^3;
@@ -69,20 +69,27 @@ for iFile = 1:nFile
     meanFR4Rw = mean(repmat(spikeTime4Rw,1,8).*trialIndex(:,1:8));
     stdFR4Rw = std(repmat(spikeTime4Rw,1,8).*trialIndex(:,1:8));
         
-    dCue(iFile,1) = abs(meanFR4Cue(1)-meanFR4Cue(3))/sqrt(stdFR4Cue(1)^2/cueResult(1)+stdFR4Cue(3)^2/cueResult(3)); % d' for cue in no mod trials
-    dCue(iFile,2) = abs(meanFR4Cue(2)-meanFR4Cue(4))/sqrt(stdFR4Cue(2)^2/cueResult(2)+stdFR4Cue(4)^2/cueResult(4)); % d' for cue in mod trials
+    dCue(iFile,1) = abs(meanFR4Cue(1)-meanFR4Cue(3))/sqrt(stdFR4Cue(1)^2/cueResult(1)+stdFR4Cue(3)^2/cueResult(3)); % d' for cue in no mod trials ; |A-B|/Std
+    dCue(iFile,2) = abs(meanFR4Cue(2)-meanFR4Cue(4))/sqrt(stdFR4Cue(2)^2/cueResult(2)+stdFR4Cue(4)^2/cueResult(4)); % d' for cue in mod trials ; |A-B|/Std
+    
+    dCue(iFile,3) = abs(meanFR4Cue(1)-meanFR4Cue(3))/(meanFR4Cue(1)+meanFR4Cue(3)); % d' for cue in no mod trials ; |A-B|/|A+B|
+    dCue(iFile,4) = abs(meanFR4Cue(2)-meanFR4Cue(4))/(meanFR4Cue(2)+meanFR4Cue(4)); % d' for cue in mod trials ; |A-B|/|A+B|
     
     for iType = 1:4
         dRw(iFile,iType) = abs(meanFR4Rw(iType)-meanFR4Rw(iType+2))/sqrt(stdFR4Rw(iType)^2/trialResult(iType)+stdFR4Rw(iType+2)^2/trialResult(iType+2));
-         % d' for reward in (cueA, no mod trials / cueA,mod trials / ..)
+         % d' for reward in (cueA, no mod trials / cueA,mod trials / ..) ; |A-B|/Std
+        dRw(iFile,iType+4) = abs(meanFR4Rw(iType)-meanFR4Rw(iType+2))/(meanFR4Rw(iType)+meanFR4Rw(iType+2)); % |A-B|/|A+B|
     end 
     cellList{iFile,1} = matFile{iFile};
 end
 
-pRw = NaN(1,2);
-[~,pCue] = ttest(dCue(:,1),dCue(:,2));
-[~,pRw(1)] = ttest(dRw(:,1),dRw(:,2));
-[~,pRw(2)] = ttest(dRw(:,3),dRw(:,4));
+pRw = NaN(1,4);
+[~,pCue(1)] = ttest(dCue(:,1),dCue(:,2)); % |A-B|/Std
+[~,pCue(2)] = ttest(dCue(:,3),dCue(:,4)); % |A-B|/|A+B|
+[~,pRw(1)] = ttest(dRw(:,1),dRw(:,2)); % in Cue A; |A-B|/Std 
+[~,pRw(2)] = ttest(dRw(:,3),dRw(:,4)); % in Cue B; |A-B|/Std
+[~,pRw(3)] = ttest(dRw(:,5),dRw(:,6)); % in Cue A; |A-B|/|A+B|
+[~,pRw(4)] = ttest(dRw(:,7),dRw(:,8)); % in Cue B; |A-B|/|A+B|
 
 
 % make plot
@@ -97,7 +104,7 @@ set(fCueXMod,'XLim',[0 axisLim],'YLim',[0 axisLim],'XTick',[0:axisLim],'YTick',[
 ylabel('With Modulation');
 xlabel('Without Modulation');
 title('Cue Discrimination Index');
-text(axisLim*0.1,axisLim*0.9,['p =', num2str(pCue,3)],'FontSize',8);
+text(axisLim*0.1,axisLim*0.9,['p =', num2str(pCue(1),3)],'FontSize',8);
 axis equal
 axis tight
 
