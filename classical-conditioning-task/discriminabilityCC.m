@@ -44,6 +44,7 @@ cueWinLength = diff(cueWindow);
 rewardWindow = [0 1]*10^3;
 rewardWinLength = diff(rewardWindow);
 cellList = {};
+tagIndex = [];
 
 % calculate discrimination index and p value
 for iFile = 1:nFile
@@ -55,6 +56,7 @@ for iFile = 1:nFile
     if find(trialResult==0,1)<9 || find(cueResult==0,1)<5; 
         dCue(iFile,:) = NaN;
         dRw(iFile,:) = NaN;
+        tagIndex(iFile) = NaN;
         continue;
     end
     
@@ -80,7 +82,14 @@ for iFile = 1:nFile
          % d' for reward in (cueA, no mod trials / cueA,mod trials / ..) ; |A-B|/Std
         dRw(iFile,iType+4) = abs(meanFR4Rw(iType)-meanFR4Rw(iType+2))/(meanFR4Rw(iType)+meanFR4Rw(iType+2)); % |A-B|/|A+B|
     end 
+   
     cellList{iFile,1} = matFile{iFile};
+    
+    if p_tagRed<0.05
+        tagIndex(iFile) = 1; 
+    else
+        tagIndex(iFile) = NaN;
+    end
 end
 
 pRw = NaN(1,4);
@@ -91,6 +100,10 @@ pRw = NaN(1,4);
 [~,pRw(3)] = ttest(dRw(:,5),dRw(:,6)); % in Cue A; |A-B|/|A+B|
 [~,pRw(4)] = ttest(dRw(:,7),dRw(:,8)); % in Cue B; |A-B|/|A+B|
 
+[~,pCueMod(1)] = ttest(dCue(:,1).*tagIndex(:),dCue(:,2).*tagIndex(:));
+[~,pRwMod(1)] = ttest(dRw(:,1).*tagIndex(:),dRw(:,2).*tagIndex(:));
+[~,pRwMod(2)] = ttest(dRw(:,3).*tagIndex(:),dRw(:,4).*tagIndex(:));
+
 
 % make plot
 
@@ -100,6 +113,7 @@ hold on;
 axisLim = ceil(max(dCue(:)));
 plot([0:axisLim],[0:axisLim],'Color',[0.6 0.8 1.0],'LineWidth',2);
 plot(dCue(:,1),dCue(:,2),'LineStyle','none','Marker','.','MarkerSize',9,'MarkerEdgeColor',[0.4 0.4 0.4],'MarkerFaceColor',[0.4 0.4 0.4]);
+plot(dCue(:,1).*tagIndex(:),dCue(:,2).*tagIndex(:),'LineStyle','none','Marker','.','MarkerSize',9,'MarkerEdgeColor',[1 0 0],'MarkerFaceColor',[1 0 0]);
 set(fCueXMod,'XLim',[0 axisLim],'YLim',[0 axisLim],'XTick',[0:axisLim],'YTick',[0:axisLim]);
 ylabel('With Modulation');
 xlabel('Without Modulation');
@@ -113,6 +127,7 @@ hold on;
 axisLim = ceil(max(max(dRw(:,1:2))));
 plot([0:axisLim],[0:axisLim],'Color',[0.6 0.8 1.0],'LineWidth',2);
 plot(dRw(:,1),dRw(:,2),'LineStyle','none','Marker','.','MarkerSize',9,'MarkerEdgeColor',[0.4 0.4 0.4],'MarkerFaceColor',[0.4 0.4 0.4]);
+plot(dRw(:,1).*tagIndex(:),dRw(:,2).*tagIndex(:),'LineStyle','none','Marker','.','MarkerSize',9,'MarkerEdgeColor',[1 0 0],'MarkerFaceColor',[1 0 0]);
 set(fRewardXModXCueA,'XLim',[0 axisLim],'YLim',[0 axisLim],'XTick',[0:axisLim],'YTick',[0:axisLim]);
 xlabel('Without Modulation');
 title('Reward Discrimination Index ( CueA )');
@@ -125,6 +140,7 @@ hold on;
 axisLim = ceil(max(max(dRw(:,3:4))));
 plot([0:axisLim],[0:axisLim],'Color',[0.6 0.8 1.0],'LineWidth',2);
 plot(dRw(:,3),dRw(:,4),'LineStyle','none','Marker','.','MarkerSize',9,'MarkerEdgeColor',[0.4 0.4 0.4],'MarkerFaceColor',[0.4 0.4 0.4]);
+plot(dRw(:,3).*tagIndex(:),dRw(:,4).*tagIndex(:),'LineStyle','none','Marker','.','MarkerSize',9,'MarkerEdgeColor',[1 0 0],'MarkerFaceColor',[1 0 0]);
 set(fRewardXModXCueA,'XLim',[0 axisLim],'YLim',[0 axisLim],'XTick',[0:axisLim],'YTick',[0:axisLim]);
 xlabel('Without Modulation');
 title('Reward Discrimination Index ( CueB )');
@@ -136,5 +152,5 @@ axis tight
 cd(saveDir);
 set(gcf,'PaperPositionMode','auto');
 print(fHandle,'-dtiff','-r600',['Discrimination Index_',figName{4},'_tif']);
-save('discrimination.mat','dCue','dRw','cellList','pCue','pRw');
+save('discrimination.mat','dCue','dRw','cellList','pCue','pRw','tagIndex','pCueMod','pRwMod');
 end
