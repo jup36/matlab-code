@@ -102,6 +102,7 @@ for iFile = 1:nFile
         end
     end
     errorTrial = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1));
+    eventTime(errorTrial,6) = eventTime(find(errorTrial)+1,6); % to make eventTime(:,6) as a non-decreasing vector for using histc 
     
     % Extract non-valid trials
     % If reward is not taken during current trial, it is not valid
