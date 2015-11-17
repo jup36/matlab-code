@@ -107,7 +107,7 @@ for iFile = 1:nFile
     % If reward is not taken during current trial, it is not valid
     % trial until mouse licks.
     notValidTrial = false(nTrial,1);
-    notValidIndex = find(isnan(rewardLickTime) & reward)';
+    notValidIndex = find(isnan(rewardLickTime) & reward==1)';
     for jTrial = notValidIndex
         [~,notValidUntil] = histc(lickOnsetTime(find(lickOnsetTime>=eventTime(jTrial,4),1,'first')),eventTime(:,6));
         if isempty(notValidUntil); continue; end;
