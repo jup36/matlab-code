@@ -322,6 +322,7 @@ for iFile = 1:nFile
     hMain(4) = axes('Position',axpt(1,4,1,3,axpt(nCol,nRowMain,2:3,[3 7],[],wideInterval),wideInterval));
     hold on;
     ylimRegress = [min(reg_cr_nomod.sse(1,:)) max(reg_cr_nomod.sse(1,:))]*1.1;
+    if ~any(ylimRegress); ylimRegress = [-1 1]; end;
     hFill(1) = fill(reg_cr_nomod.timesse/1000,reg_cr_nomod.sse(1,:),colorYellow);
     plot(win/1000, [0 0], 'LineStyle', ':', 'LineWidth', lineS, 'Color', colorGray);
     plot(reg_cr_nomod.time/1000,reg_cr_nomod.src(1,:), ...

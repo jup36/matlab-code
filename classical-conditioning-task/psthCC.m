@@ -181,6 +181,7 @@ for iCue = 1:nCue
     % psth
     spkhist_temp = histc(spikeTemp,spikeBin)/(binSize/10^3*trialResult(iCue));
     spkconv_temp = conv(spkhist_temp,fspecial('Gaussian',[1 5*resolution],resolution),'same');
+%     spkconv_temp = ssvkernel(spikeTemp,spikeBin)*nSpikeTotal*1000/trialResult(iCue);
     spikeHist(iCue,:) = spkhist_temp;
     spikeConv(iCue,:) = spkconv_temp;
 end
