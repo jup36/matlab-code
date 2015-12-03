@@ -1,6 +1,8 @@
 function Event2Mat(sessionFolder,modOff)
 % Event2Mat Converts data from Neuralynx NEV files to Matlab mat files
 
+lickWindow = 1000;
+
 % Make lists of event files
 narginchk(0, 2);
 if nargin == 0
@@ -43,6 +45,7 @@ for iFile = 1:nFile
     recEnd = find(strcmp(eventString,'Stopping Recording'));
     baseTime = timeStamp([recStart(1),recEnd(1)]);
     taskTime = timeStamp([recStart(2),recEnd(2)]);
+    tagTime = timeStamp([recStart(3),recEnd(3)]);
     
     % lick time
     lickITIThreshold = 1000/20; % lick intervals shorter than 20 Hz (50 ms) are usually artifacts.
@@ -61,6 +64,7 @@ for iFile = 1:nFile
     punishment = NaN(nTrial, 1);
     modulation = NaN(nTrial, 1);
     rewardLickTime = NaN(nTrial,1);
+    lickYes = NaN(nTrial,1);
     punishYes = any(strcmp(eventString, 'Punishment'));
     for iTrial = 1:nTrial
         inTrial = (timeStamp>=timeStamp(trialStartIndex(iTrial)) & timeStamp<timeStamp(trialStartIndex(iTrial+1)));
@@ -101,14 +105,20 @@ for iFile = 1:nFile
         % find first lick after reward presentation time
         if punishYes && cue(iTrial) == 4
             rewardLickTime(iTrial) = eventTime(iTrial,4);
+            lickYes(iTrial) = 1;
         else
-            rewardTempTime = find(lickOnsetTime>=eventTime(iTrial,4) & lickOnsetTime<eventTime(iTrial,6),1,'first');
+            rewardTempTime = find(lickOnsetTime>=eventTime(iTrial,4) & lickOnsetTime<(eventTime(iTrial,4)+lickWindow),1,'first');
             if ~isempty(rewardTempTime)
                 rewardLickTime(iTrial) = lickOnsetTime(rewardTempTime);
             end
+            
+            lickYesTemp = find(lickOnsetTime>=eventTime(iTrial,1) & lickOnsetTime<eventTime(iTrial,6));
+            if ~isempty(lickYesTemp)
+                lickYes(iTrial) = 1;
+            end
         end
     end
-    errorTrial = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1));
+    errorTrial = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1)) | isnan(lickYes);
     errorTrialNum = sum(errorTrial);
     
     eventTime(errorTrial,:) = [];
@@ -172,7 +182,7 @@ for iFile = 1:nFile
     redOnsetTime = timeStamp(redOnsetIndex);
     
     save('Events.mat', ...
-        'baseTime', 'taskTime', 'lickOnsetTime', 'rewardLickTime', ...
+        'baseTime', 'taskTime', 'tagTime', 'lickOnsetTime', 'rewardLickTime', ...
         'eventTime', 'cue', 'reward', 'punishment', 'modulation', ...
         'nTrial', 'nTrialRw', 'errorTrialNum', 'notValidTrialNum', 'maxTrialDuration', 'eventDuration', ...
         'cueIndex', 'cueResult', 'trialIndex', 'trialResult', ...
