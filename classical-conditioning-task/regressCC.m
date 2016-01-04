@@ -98,7 +98,7 @@ for iVar = 1:nVar
 end
 
 for iBin = 1:nBin
-    [beta,~,stats] = glmfit(predictor, spk(:,iBin),'poisson');
+    [beta,~,stats] = glmfit(predictor, spk(:,iBin));
     
     src(:,iBin) = beta(2:end) .* predStd(:,iBin);
     sse(:,iBin) = stats.se(2:end) .* predStd(:,iBin);
