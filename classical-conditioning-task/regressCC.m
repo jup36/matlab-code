@@ -50,33 +50,34 @@ for iFile = 1:nFile
     [reg_time, reg_spk] = spikeBin(spikeTime, win, binWindow, binStep);
     [regRw_time, regRw_spk] = spikeBin(spikeTimeRw, winRw, binWindow, binStep);
     
-    value = zeros(nTrial,1);
-    for iCue = 1:4
-        trialAll = 4*(iCue-1) + (1:4);
-        if any(trialResult(trialAll))
-            valueTemp = sum(trialResult(4*(iCue-1) + [1 2])) / sum(trialResult(trialAll));
-        end
-        value(cue==iCue) = valueTemp;
-    end    
+    inRegress = (cue==1 | cue==4);
+    reg_spk = reg_spk(inRegress,:);
+    regRw_spk = regRw_spk(inRegress,:);
     
+    value = cue(inRegress);
+    value(value~=1) = 0;
+    modulation = modulation(inRegress);
     nomod = (modulation==0);
     mod = (modulation==1);
     inRw = ~isnan(rewardLickTime);
+    inRw = inRw(inRegress);
+    reward = reward(inRegress);
+    punishment = punishment(inRegress);
     
     % regression (cue, reward | modulation==0)
     if any(nomod)
-        reg_cr_nomod = slideReg(reg_time, reg_spk(nomod,:), [value(nomod) reward(nomod) value(nomod).*reward(nomod)]);
-        regRw_cr_nomod = slideReg(regRw_time, regRw_spk(nomod & inRw,:), [value(nomod & inRw) reward(nomod & inRw) value(nomod & inRw).*reward(nomod & inRw)]);
+        reg_cr_nomod = slideReg(reg_time, reg_spk(nomod,:), [value(nomod) reward(nomod) punishment(nomod)]);
+        regRw_cr_nomod = slideReg(regRw_time, regRw_spk(nomod & inRw,:), [value(nomod & inRw) reward(nomod & inRw) punishment(nomod & inRw)]);
         save(matFile{iFile}, 'reg_cr_nomod', 'regRw_cr_nomod', '-append');
     end
     
     % regression (cue, reward | modulation==1)
     % regression (cue, reward, modulation)
     if any(mod)
-        reg_cr_mod = slideReg(reg_time, reg_spk(mod,:), [value(mod) reward(mod) value(mod).*reward(mod)]);
-        reg_crm = slideReg(reg_time, reg_spk, [value reward modulation value.*reward value.*modulation reward.*modulation]);
-        regRw_cr_mod = slideReg(regRw_time, regRw_spk(mod & inRw,:), [value(mod & inRw) reward(mod & inRw) value(mod & inRw).*reward(mod & inRw)]);
-        regRw_crm = slideReg(regRw_time, regRw_spk(inRw,:), [value(inRw) reward(inRw) modulation(inRw) value(inRw).*reward(inRw) value(inRw).*modulation(inRw) reward(inRw).*modulation(inRw)]);
+        reg_cr_mod = slideReg(reg_time, reg_spk(mod,:), [value(mod) reward(mod) punishment(mod)]);
+        reg_crm = slideReg(reg_time, reg_spk, [value reward punishment modulation value.*modulation reward.*modulation punishment.*modulation]);
+        regRw_cr_mod = slideReg(regRw_time, regRw_spk(mod & inRw,:), [value(mod & inRw) reward(mod & inRw) punishment(mod & inRw)]);
+        regRw_crm = slideReg(regRw_time, regRw_spk(inRw,:), [value(inRw) reward(inRw) punishment(inRw) modulation(inRw) value(inRw).*modulation(inRw) reward(inRw).*modulation(inRw) punishment(inRw).*modulation(inRw)]);
         save(matFile{iFile}, 'reg_cr_mod', 'reg_crm', 'regRw_cr_mod', 'regRw_crm', '-append');
     end
 end
@@ -104,7 +105,7 @@ for iBin = 1:nBin
     p(:,iBin) = stats.p(2:end);
 end
 
-outRange = (abs(src) > 10);
+outRange = (abs(src+1.96*sse) > 10);
 src(outRange) = 0;
 sse(outRange) = 0;
 p(outRange) = 1;
