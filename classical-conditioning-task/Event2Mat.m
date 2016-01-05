@@ -1,11 +1,13 @@
-function Event2Mat(sessionFolder)
+function Event2Mat(sessionFolder,modOff,noLickOut)
 % Event2Mat Converts data from Neuralynx NEV files to Matlab mat files
 
+lickWindow = 1000;
+
 % Make lists of event files
-narginchk(0, 1);
+narginchk(0, 3);
 if nargin == 0
     eventFile = FindFiles('Events.nev','CheckSubdirs',0);
-elseif nargin == 1
+elseif nargin >= 1
     if ~iscell(sessionFolder)
         disp('Input argument is wrong. It should be cell array.');
         return;
@@ -26,6 +28,12 @@ if isempty(eventFile)
     disp('Event file does not exist!');
     return;
 end
+if nargin < 2
+    modOff = 0;
+end
+if nargin < 3
+    noLickOut = 0;
+end
 
 nFile = length(eventFile);
 for iFile = 1:nFile
@@ -40,6 +48,7 @@ for iFile = 1:nFile
     recEnd = find(strcmp(eventString,'Stopping Recording'));
     baseTime = timeStamp([recStart(1),recEnd(1)]);
     taskTime = timeStamp([recStart(2),recEnd(2)]);
+    tagTime = timeStamp([recStart(3),recEnd(3)]);
     
     % lick time
     lickITIThreshold = 1000/20; % lick intervals shorter than 20 Hz (50 ms) are usually artifacts.
@@ -55,17 +64,20 @@ for iFile = 1:nFile
     eventTime = NaN(nTrial, 6);
     cue = NaN(nTrial, 1);
     reward = NaN(nTrial, 1);
+    punishment = NaN(nTrial, 1);
     modulation = NaN(nTrial, 1);
     rewardLickTime = NaN(nTrial,1);
+    lickYes = NaN(nTrial,1);
+    punishYes = any(strcmp(eventString, 'Punishment'));
     for iTrial = 1:nTrial
-        inTrial = (timeStamp>=timeStamp(trialStartIndex(iTrial)) & timeStamp<timeStamp(trialStartIndex(iTrial+1)));
+        inTrial = (timeStamp>=timeStamp(trialStartIndex(iTrial)) & timeStamp<(timeStamp(trialStartIndex(iTrial+1))-1));
         
         % cue
         cueIndex = strncmp(eventString, 'Cue', 3) & inTrial;
         if ~any(cueIndex); continue; end;
         
         % reward
-        rewardIndex = (strcmp(eventString, 'Reward') | strcmp(eventString, 'Non-reward')) & inTrial;
+        rewardIndex = (strcmp(eventString, 'Reward') | strcmp(eventString, 'Non-reward') | strcmp(eventString, 'Punishment')) & inTrial;
         if ~any(rewardIndex); continue; end;
 
         % TTL off (1. cue onset, 2. delay onset, 3. reward offset)
@@ -90,35 +102,62 @@ for iFile = 1:nFile
         % trial variables
         cue(iTrial) = str2double(eventString{cueIndex}(4));
         reward(iTrial) = any(strcmp(eventString, 'Reward') & inTrial);
+        punishment(iTrial) = any(strcmp(eventString, 'Punishment') & inTrial);
         modulation(iTrial) = any(modulationIndex);
         
         % find first lick after reward presentation time
-        rewardTempTime = find(lickOnsetTime>=eventTime(iTrial,4) & lickOnsetTime<eventTime(iTrial,6),1,'first');
-        if ~isempty(rewardTempTime)
-            rewardLickTime(iTrial) = lickOnsetTime(rewardTempTime);
+        if punishYes && cue(iTrial) == 4
+            rewardLickTime(iTrial) = eventTime(iTrial,4);
+            lickYes(iTrial) = 1;
+        else
+            rewardTempTime = find(lickOnsetTime>=eventTime(iTrial,4) & lickOnsetTime<(eventTime(iTrial,4)+lickWindow),1,'first');
+            if ~isempty(rewardTempTime)
+                rewardLickTime(iTrial) = lickOnsetTime(rewardTempTime);
+            end
+            
+            lickYesTemp = find(lickOnsetTime>=eventTime(iTrial,1) & lickOnsetTime<eventTime(iTrial,6));
+            if ~isempty(lickYesTemp)
+                lickYes(iTrial) = 1;
+            end
         end
     end
-    errorTrial = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1));
+    if noLickOut == 1
+        errorTrial = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1)) | isnan(lickYes);
+    else
+        errorTrial = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1));
+    end
+    errorTrialNum = sum(errorTrial);
+    
+    eventTime(errorTrial,:) = [];
+    cue(errorTrial) = [];
+    reward(errorTrial) = [];
+    punishment(errorTrial) = [];
+    modulation(errorTrial) = [];
+    rewardLickTime(errorTrial) = [];
     
     % Extract non-valid trials
     % If reward is not taken during current trial, it is not valid
     % trial until mouse licks.
     notValidTrial = false(nTrial,1);
-    notValidIndex = find(isnan(rewardLickTime) & reward)';
+    notValidIndex = find(isnan(rewardLickTime) & reward==1)';
     for jTrial = notValidIndex
         [~,notValidUntil] = histc(lickOnsetTime(find(lickOnsetTime>=eventTime(jTrial,4),1,'first')),eventTime(:,6));
         if isempty(notValidUntil); continue; end;
         notValidTrial(jTrial:(notValidUntil+1)) = true;
     end
-    
-    errorTrialNum = sum(errorTrial);
+
     notValidTrialNum = sum(notValidTrial);
     
-    eventTime(errorTrial | notValidTrial,:) = [];
-    cue(errorTrial | notValidTrial) = [];
-    reward(errorTrial | notValidTrial) = [];
-    modulation(errorTrial | notValidTrial) = [];
-    rewardLickTime(errorTrial | notValidTrial) = [];
+    eventTime(notValidTrial,:) = [];
+    cue(notValidTrial) = [];
+    reward(notValidTrial) = [];
+    punishment(notValidTrial) = [];
+    modulation(notValidTrial) = [];
+    rewardLickTime(notValidTrial) = [];
+    
+    if modOff==1
+        modulation(modulation==1)=0;
+    end
        
     nTrial = size(eventTime,1);
     nTrialRw = sum(~isnan(rewardLickTime));
@@ -129,13 +168,13 @@ for iFile = 1:nFile
 
     % trial summary
     cueIndex = false(nTrial,8); % [CueA&noMod CueA&Mod ...]
-    trialIndex = false(nTrial,16);% [CueA&noMod&Reward CueA&Mod&Reward CueA&noMod&noReward CueA&noMod&noReward ...]
+    trialIndex = false(nTrial,16);% [CueA&noMod&Reward CueA&Mod&Reward CueA&noMod&noReward CueA&Mod&noReward ...]
     for iCue = 1:4
         for iModulation = 1:2
             cueIndex(:,(iCue-1)*2 + iModulation) = (cue==iCue) & (modulation==(iModulation-1));
             for iReward = 1:2
                 iCol = (iCue-1)*4 + (iReward-1)*2 + iModulation;
-                trialIndex(:,iCol) = (cue==iCue) & (reward==(2-iReward)) & (modulation==(iModulation-1));
+                trialIndex(:,iCol) = (cue==iCue) & ((reward+punishment)==(2-iReward)) & (modulation==(iModulation-1));
             end
         end
     end
@@ -150,8 +189,8 @@ for iFile = 1:nFile
     redOnsetTime = timeStamp(redOnsetIndex);
     
     save('Events.mat', ...
-        'baseTime', 'taskTime', 'lickOnsetTime', 'rewardLickTime', ...
-        'eventTime', 'cue', 'reward', 'modulation', ...
+        'baseTime', 'taskTime', 'tagTime', 'lickOnsetTime', 'rewardLickTime', ...
+        'eventTime', 'cue', 'reward', 'punishment', 'modulation', ...
         'nTrial', 'nTrialRw', 'errorTrialNum', 'notValidTrialNum', 'maxTrialDuration', 'eventDuration', ...
         'cueIndex', 'cueResult', 'trialIndex', 'trialResult', ...
         'blueOnsetTime', 'redOnsetTime');   
