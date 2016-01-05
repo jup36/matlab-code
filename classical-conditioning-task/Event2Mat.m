@@ -1,10 +1,10 @@
-function Event2Mat(sessionFolder,modOff)
+function Event2Mat(sessionFolder,modOff,noLickOut)
 % Event2Mat Converts data from Neuralynx NEV files to Matlab mat files
 
 lickWindow = 1000;
 
 % Make lists of event files
-narginchk(0, 2);
+narginchk(0, 3);
 if nargin == 0
     eventFile = FindFiles('Events.nev','CheckSubdirs',0);
 elseif nargin >= 1
@@ -30,6 +30,9 @@ if isempty(eventFile)
 end
 if nargin < 2
     modOff = 0;
+end
+if nargin < 3
+    noLickOut = 0;
 end
 
 nFile = length(eventFile);
@@ -67,7 +70,7 @@ for iFile = 1:nFile
     lickYes = NaN(nTrial,1);
     punishYes = any(strcmp(eventString, 'Punishment'));
     for iTrial = 1:nTrial
-        inTrial = (timeStamp>=timeStamp(trialStartIndex(iTrial)) & timeStamp<timeStamp(trialStartIndex(iTrial+1)));
+        inTrial = (timeStamp>=timeStamp(trialStartIndex(iTrial)) & timeStamp<(timeStamp(trialStartIndex(iTrial+1))-1));
         
         % cue
         cueIndex = strncmp(eventString, 'Cue', 3) & inTrial;
@@ -118,7 +121,11 @@ for iFile = 1:nFile
             end
         end
     end
-    errorTrial = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1)) | isnan(lickYes);
+    if noLickOut == 1
+        errorTrial = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1)) | isnan(lickYes);
+    else
+        errorTrial = isnan(cue) | isnan(reward) | isnan(modulation) | isnan(eventTime(:,1));
+    end
     errorTrialNum = sum(errorTrial);
     
     eventTime(errorTrial,:) = [];
