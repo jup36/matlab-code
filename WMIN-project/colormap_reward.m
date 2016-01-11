@@ -1,12 +1,12 @@
-function colormap_delay
+function colormap_reward
 % This m file plots all pv and som cells using color map (imagesc). Peak firing rate will be used to align cells.
 
 % Variable nspv, nssom, and wssom will be used.
 load('D:\Cloud\project\workingmemory_interneuron\data\celllist_20150527.mat');
 
-C1 = sortunit(pv,1);
-C2 = sortunit(nssom,1);
-C3 = sortunit(wssom,1);
+C1 = sortunit(pv,2);
+C2 = sortunit(nssom,2);
+C3 = sortunit(wssom,2);
 
 nC(1) = sum(C1.pref==1);
 nC(2) = sum(C1.pref==2);
@@ -48,7 +48,7 @@ text(301/2,-1.25,'Left target', ...
 
 h(3) = axes('Position',axpt(2,scale,1,[gap_l+gap_s+nC(1)+1 gap_l+gap_s+sum(nC(1:2))]+3,axpt(2,1,1,1),[interval_s 0]));
 imagesc(C1.LR(C1.pref==2,:));
-text(title_pos, nC(2)+6, 'Time from delay (s)', ...
+text(title_pos, nC(2)+6, 'Time from reward (s)', ...
     'FontSize', font_m, 'Color', 'k', 'HorizontalAlign', 'center');
 
 h(4) = axes('Position',axpt(2,scale,2,[gap_l+gap_s+nC(1)+1 gap_l+gap_s+sum(nC(1:2))]+3,axpt(2,1,1,1),[interval_s 0]));
@@ -82,7 +82,7 @@ imagesc(C3.RL(C3.pref==1,:));
 
 h(11) = axes('Position',axpt(2,scale,1,[gap_l*2+gap_s*2+sum(nC(3:5))+1 gap_l*2+gap_s*2+sum(nC(3:6))],axpt(2,1,2,1),[interval_s 0]));
 imagesc(C3.LR(C3.pref==2,:));
-text(title_pos, nC(6)+6, 'Time from delay (s)', ...
+text(title_pos, nC(6)+6, 'Time from reward (s)', ...
     'FontSize', font_m, 'Color', 'k', 'HorizontalAlign', 'center');
 
 h(12) = axes('Position',axpt(2,scale,2,[gap_l*2+gap_s*2+sum(nC(3:5))+1 gap_l*2+gap_s*2+sum(nC(3:6))],axpt(2,1,2,1),[interval_s 0]));
@@ -91,9 +91,9 @@ imagesc(C3.RL(C3.pref==2,:));
 set(h, 'Box', 'off', 'TickDir', 'out', 'FontSize', font_s, 'LineWidth', 0.2, ...
     'XTick', [], 'XColor', 'w', ...
     'YTick', [], 'YColor', 'w');
-set(h([3 4 11 12]), 'XColor', 'k', 'XTick', [1 101 201 301], 'XTickLabel', [0 1 2 3]);
+set(h([3 4 11 12]), 'XColor', 'k', 'XTick', [1 101 201 301], 'XTickLabel', [-1 0 1 2]);
 
-print(gcf,'-dtiff', '-r600', 'colormap_delay.tif');
+print(gcf,'-dtiff', '-r600', 'colormap_reward.tif');
 close all;
 
 % -------------------------------------------------------------------------
