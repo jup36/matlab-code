@@ -48,7 +48,7 @@ text(301/2,-1.25,'Left target', ...
 
 h(3) = axes('Position',axpt(2,scale,1,[gap_l+gap_s+nC(1)+1 gap_l+gap_s+sum(nC(1:2))]+3,axpt(2,1,1,1),[interval_s 0]));
 imagesc(C1.LR(C1.pref==2,:));
-text(title_pos, nC(2)+6, 'Time from reward (s)', ...
+text(title_pos, nC(2)+6, 'Time from reward onset (s)', ...
     'FontSize', font_m, 'Color', 'k', 'HorizontalAlign', 'center');
 
 h(4) = axes('Position',axpt(2,scale,2,[gap_l+gap_s+nC(1)+1 gap_l+gap_s+sum(nC(1:2))]+3,axpt(2,1,1,1),[interval_s 0]));
@@ -82,7 +82,7 @@ imagesc(C3.RL(C3.pref==1,:));
 
 h(11) = axes('Position',axpt(2,scale,1,[gap_l*2+gap_s*2+sum(nC(3:5))+1 gap_l*2+gap_s*2+sum(nC(3:6))],axpt(2,1,2,1),[interval_s 0]));
 imagesc(C3.LR(C3.pref==2,:));
-text(title_pos, nC(6)+6, 'Time from reward (s)', ...
+text(title_pos, nC(6)+6, 'Time from reward onset (s)', ...
     'FontSize', font_m, 'Color', 'k', 'HorizontalAlign', 'center');
 
 h(12) = axes('Position',axpt(2,scale,2,[gap_l*2+gap_s*2+sum(nC(3:5))+1 gap_l*2+gap_s*2+sum(nC(3:6))],axpt(2,1,2,1),[interval_s 0]));

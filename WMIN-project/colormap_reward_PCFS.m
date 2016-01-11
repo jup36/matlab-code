@@ -1,12 +1,11 @@
-function colormap_delay
+function colormap_reward_PCFS
 % This m file plots all pv and som cells using color map (imagesc). Peak firing rate will be used to align cells.
 
 % Variable nspv, nssom, and wssom will be used.
 load('D:\Cloud\project\workingmemory_interneuron\data\celllist_20150527.mat');
 
-C1 = sortunit(pv,1);
-C2 = sortunit(nssom,1);
-C3 = sortunit(wssom,1);
+C1 = sortunit(pc,2);
+C2 = sortunit(fs,2);
 
 nC(1) = sum(C1.pref==1);
 nC(2) = sum(C1.pref==2);
@@ -14,11 +13,8 @@ nC(2) = sum(C1.pref==2);
 nC(3) = sum(C2.pref==1);
 nC(4) = sum(C2.pref==2);
 
-nC(5) = sum(C3.pref==1);
-nC(6) = sum(C3.pref==2);
-
-scale = 100;
-gap_s = 1;
+scale = 920;
+gap_s = 10;
 gap_l = 5;
 interval_s = 0.075;
 color_red = [0.906 0.184 0.153];
@@ -28,26 +24,26 @@ font_m = 4;
 font_l = 5;
 title_pos = 325;
 
-
 close all;
 fHandle = figure('PaperUnits','centimeters','PaperPosition',[2 2 8.9/2 6.88]);
 colormap jet;
 
 h(1) = axes('Position',axpt(2,scale,1,[gap_l+1 gap_l+nC(1)]+3,axpt(2,1,1,1),[interval_s 0]));
 imagesc(C1.LR(C1.pref==1,:));
-text(title_pos, -4, 'PV', ...
+text(title_pos, -35, 'Type II', ...
     'FontSize', font_l, 'Color', 'k', 'HorizontalAlign', 'center');
-text(301/2, -1.25, 'Right target', ...
+text(301/2, -10, 'Right target', ...
     'FontSize', font_s, 'Color', color_red, 'HorizontalAlign', 'center');
+
 
 h(2) = axes('Position',axpt(2,scale,2,[gap_l+1 gap_l+nC(1)]+3,axpt(2,1,1,1),[interval_s 0]));
 imagesc(C1.RL(C1.pref==1,:));
-text(301/2,-1.25,'Left target', ...
+text(301/2,-10,'Left target', ...
     'FontSize', font_s, 'Color', color_blue, 'HorizontalAlign', 'center');
 
 h(3) = axes('Position',axpt(2,scale,1,[gap_l+gap_s+nC(1)+1 gap_l+gap_s+sum(nC(1:2))]+3,axpt(2,1,1,1),[interval_s 0]));
 imagesc(C1.LR(C1.pref==2,:));
-text(title_pos, nC(2)+6, 'Time from delay onset (s)', ...
+text(title_pos, nC(2)+50, 'Time from reward onset (s)', ...
     'FontSize', font_m, 'Color', 'k', 'HorizontalAlign', 'center');
 
 h(4) = axes('Position',axpt(2,scale,2,[gap_l+gap_s+nC(1)+1 gap_l+gap_s+sum(nC(1:2))]+3,axpt(2,1,1,1),[interval_s 0]));
@@ -55,44 +51,30 @@ imagesc(C1.RL(C1.pref==2,:));
 
 h(5) = axes('Position',axpt(2,scale,1,[gap_l+1 gap_l+nC(3)],axpt(2,1,2,1),[interval_s 0]));
 imagesc(C2.LR(C2.pref==1,:));
-text(title_pos, -4, 'ns-SOM', ...
+text(title_pos, -35, 'Type I', ...
     'FontSize', font_l, 'Color', 'k', 'HorizontalAlign', 'center');
-text(301/2, -1.25, 'Right target', ...
+text(301/2, -10, 'Right target', ...
     'FontSize', font_s, 'Color', color_red, 'HorizontalAlign', 'center');
 
 h(6) = axes('Position',axpt(2,scale,2,[gap_l+1 gap_l+nC(3)],axpt(2,1,2,1),[interval_s 0]));
 imagesc(C2.RL(C2.pref==1,:));
-text(301/2,-1.25,'Left target', ...
+text(301/2,-10,'Left target', ...
     'FontSize', font_s, 'Color', color_blue,  'HorizontalAlign', 'center');
 
 h(7) = axes('Position',axpt(2,scale,1,[gap_l+gap_s+nC(3)+1 gap_l+gap_s+sum(nC(3:4))],axpt(2,1,2,1),[interval_s 0]));
 imagesc(C2.LR(C2.pref==2,:));
+text(title_pos, nC(4)+50, 'Time from reward onset (s)', ...
+    'FontSize', font_m, 'Color', 'k', 'HorizontalAlign', 'center');
 
 h(8) = axes('Position',axpt(2,scale,2,[gap_l+gap_s+nC(3)+1 gap_l+gap_s+sum(nC(3:4))],axpt(2,1,2,1),[interval_s 0]));
 imagesc(C2.RL(C2.pref==2,:));
 
-h(9) = axes('Position',axpt(2,scale,1,[gap_l*2+gap_s+sum(nC(3:4))+1 gap_l*2+gap_s+sum(nC(3:5))],axpt(2,1,2,1),[interval_s 0]));
-imagesc(C3.LR(C3.pref==1,:));
-text(title_pos, -2, 'ws-SOM', ...
-    'FontSize', font_l, 'Color', 'k', 'HorizontalAlign', 'center');
-
-h(10) = axes('Position',axpt(2,scale,2,[gap_l*2+gap_s+sum(nC(3:4))+1 gap_l*2+gap_s+sum(nC(3:5))],axpt(2,1,2,1),[interval_s 0]));
-imagesc(C3.RL(C3.pref==1,:));
-
-h(11) = axes('Position',axpt(2,scale,1,[gap_l*2+gap_s*2+sum(nC(3:5))+1 gap_l*2+gap_s*2+sum(nC(3:6))],axpt(2,1,2,1),[interval_s 0]));
-imagesc(C3.LR(C3.pref==2,:));
-text(title_pos, nC(6)+6, 'Time from delay onset (s)', ...
-    'FontSize', font_m, 'Color', 'k', 'HorizontalAlign', 'center');
-
-h(12) = axes('Position',axpt(2,scale,2,[gap_l*2+gap_s*2+sum(nC(3:5))+1 gap_l*2+gap_s*2+sum(nC(3:6))],axpt(2,1,2,1),[interval_s 0]));
-imagesc(C3.RL(C3.pref==2,:));
-
 set(h, 'Box', 'off', 'TickDir', 'out', 'FontSize', font_s, 'LineWidth', 0.2, ...
     'XTick', [], 'XColor', 'w', ...
     'YTick', [], 'YColor', 'w');
-set(h([3 4 11 12]), 'XColor', 'k', 'XTick', [1 101 201 301], 'XTickLabel', [0 1 2 3]);
+set(h([3 4 7 8]), 'XColor', 'k', 'XTick', [1 101 201 301], 'XTickLabel', [-1 0 1 2]);
 
-print(gcf,'-dtiff', '-r600', 'colormap_delay.tif');
+print(gcf,'-dtiff', '-r600', 'colormap_reward_PCFS.tif');
 close all;
 
 % -------------------------------------------------------------------------
