@@ -3,31 +3,6 @@ function Event2Mat(sessionFolder,modOff,noLickOut)
 
 lickWindow = 1000;
 
-% Make lists of event files
-narginchk(0, 3);
-if nargin == 0
-    eventFile = FindFiles('Events.nev','CheckSubdirs',0);
-elseif nargin >= 1
-    if ~iscell(sessionFolder)
-        disp('Input argument is wrong. It should be cell array.');
-        return;
-    elseif isempty(sessionFolder)
-        eventFile = FindFiles('Events.nev','CheckSubdirs',0);
-    else
-        nFolder = length(sessionFolder);
-        eventFile = cell(0,1);
-        for iFolder = 1:nFolder
-            if exist(sessionFolder{iFolder},'dir')
-                cd(sessionFolder{iFolder});
-                eventFile = [eventFile;FindFiles('Events.nev','CheckSubdirs',1)];
-            end
-        end
-    end
-end
-if isempty(eventFile)
-    disp('Event file does not exist!');
-    return;
-end
 if nargin < 2
     modOff = 0;
 end
@@ -35,13 +10,15 @@ if nargin < 3
     noLickOut = 0;
 end
 
-nFile = length(eventFile);
+[eData, eList] = eLoad(sessionFolder);
+
+nFile = length(eList);
 for iFile = 1:nFile
-    disp(['Analyzing ',eventFile{iFile}]);
-    cd(fileparts(eventFile{iFile}));
+    disp(['Analyzing ',eList{iFile}]);
+    cd(fileparts(eList{iFile}));
     
-    [timeStamp, eventString] = Nlx2MatEV(eventFile{iFile}, [1 0 0 0 1], 0, 1, []);
-    timeStamp = timeStamp'/1000; % unit: ms
+    timeStamp = eData(iFile).t;
+    eventString = eData(iFile).s;
     
     % epoch
     recStart = find(strcmp(eventString,'Starting Recording'));
