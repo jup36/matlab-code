@@ -17,17 +17,17 @@ narginchk(0, 3);
 if nargin == 0
     eList = FindFiles('Events.nev','CheckSubdirs',0);
 elseif nargin >= 1
-    if ~iscell(sessionFolder)
+    if ~iscell(eFile)
         disp('Input argument is wrong. It should be cell array.');
         return;
-    elseif isempty(sessionFolder)
+    elseif isempty(eFile)
         eList = FindFiles('Events.nev','CheckSubdirs',0);
     else
-        nFolder = length(sessionFolder);
+        nFolder = length(eFile);
         eList = cell(0,1);
         for iFolder = 1:nFolder
-            if exist(sessionFolder{iFolder},'dir')
-                cd(sessionFolder{iFolder});
+            if exist(eFile{iFolder},'dir')
+                cd(eFile{iFolder});
                 eList = [eList;FindFiles('Events.nev','CheckSubdirs',1)];
             end
         end

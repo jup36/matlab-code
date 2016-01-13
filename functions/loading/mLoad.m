@@ -1,4 +1,4 @@
-function mList = mLoad(tFile)
+function mList = mLoad(mFile)
 %mLoad loads T*.mat files
 %
 %   mList: lists of TT*.mat files
@@ -9,20 +9,20 @@ switch nargin
     case 0
         mList = FindFiles('T*.mat','CheckSubdirs',0); 
     case 1 
-        if ~iscell(cellFolder) 
+        if ~iscell(mFile) 
             disp('Input argument is wrong. It should be cell array.');
             return;
-        elseif isempty(cellFolder)
+        elseif isempty(mFile)
             mList = FindFiles('T*.mat','CheckSubdirs',1);
         else
-            nFolder = length(cellFolder);
+            nFolder = length(mFile);
             mList = cell(0,1);
             for iFolder = 1:nFolder
-                if exist(cellFolder{iFolder})==7
-                    cd(cellFolder{iFolder});
+                if exist(mFile{iFolder})==7
+                    cd(mFile{iFolder});
                     mList = [mList;FindFiles('T*.mat','CheckSubdirs',1)];
-                elseif strcmp(cellFolder{iFolder}(end-3:end),'.mat')
-                    mList = [mList;cellFolder{iFolder}];
+                elseif strcmp(mFile{iFolder}(end-3:end),'.mat')
+                    mList = [mList;mFile{iFolder}];
                 end
             end
         end

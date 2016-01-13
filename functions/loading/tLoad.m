@@ -10,20 +10,20 @@ function [tData tList] = tLoad(tFile)
 if nargin == 0
     tList = FindFiles('T*.t','CheckSubdirs',0); 
 else
-    if ~iscell(sessionFolder)
+    if ~iscell(tFile)
         disp('Input argument is wrong. It should be cell array.');
         return;
-    elseif isempty(sessionFolder)
+    elseif isempty(tFile)
         tList = FindFiles('T*.t','CheckSubdirs',1);
     else
-        nFolder = length(sessionFolder);
+        nFolder = length(tFile);
         tList = cell(0,1);
         for iFolder = 1:nFolder
-            if exist(sessionFolder{iFolder})==7 
-                cd(sessionFolder{iFolder});
+            if exist(tFile{iFolder})==7 
+                cd(tFile{iFolder});
                 tList = [tList;FindFiles('T*.t','CheckSubdirs',1)];
-            elseif strcmp(sessionFolder{iFolder}(end-1:end),'.t') 
-                tList = [tList;sessionFolder{iFolder}];
+            elseif strcmp(tFile{iFolder}(end-1:end),'.t') 
+                tList = [tList;tFile{iFolder}];
             end
         end
     end
