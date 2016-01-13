@@ -43,7 +43,8 @@ Temporary Items
 .apdisk
 
 # Image files or documents
-.tif
-.bmp
-.jpg
-.eps
+*.bmp
+*.jpg
+*.eps
+*.tif
+*.mat
