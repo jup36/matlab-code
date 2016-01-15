@@ -62,12 +62,12 @@ for iLight=1:nLight
     for iBin=1:nBin
         idx = find(spikeData > lightBin(iBin,iLight), 1, 'first');
         if isempty(idx)
-            time(iBin,iLight) = 0;
+            time(iBin,iLight) = testRange;
             censor(iBin,iLight) = 1;
         else
             time(iBin,iLight) = spikeData(idx) - lightBin(iBin,iLight);
             if time(iBin,iLight) > testRange
-                time(iBin,iLight) = 0;
+                time(iBin,iLight) = testRange;
                 censor(iBin,iLight) = 1;
             end
         end     

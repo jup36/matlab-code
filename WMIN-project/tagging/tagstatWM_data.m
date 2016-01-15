@@ -1,4 +1,6 @@
 function tagstatWM_data
+
+clearvars;
 % Variable nspv, nssom, and wssom will be used.
 load('D:\Cloud\project\workingmemory_interneuron\data\celllist_20150527.mat');
 
