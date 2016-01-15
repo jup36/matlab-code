@@ -13,7 +13,7 @@ function [eData eList] = eLoad(eFile)
 %   http://neuralynx.com/software/NeuralynxMatlabImportExport_v6.0.0.zip
 
 % Make lists of event files
-narginchk(0, 3);
+narginchk(0, 2);
 if nargin == 0
     eList = FindFiles('Events.nev','CheckSubdirs',0);
 elseif nargin >= 1
@@ -26,9 +26,8 @@ elseif nargin >= 1
         nFolder = length(eFile);
         eList = cell(0,1);
         for iFolder = 1:nFolder
-            if exist(eFile{iFolder},'dir')
-                cd(eFile{iFolder});
-                eList = [eList;FindFiles('Events.nev','CheckSubdirs',1)];
+            if exist(eFile{iFolder},'file')
+                eList = [eList;FindFiles('Events.nev','StartingDirectory',fileparts(eFile{iFolder}),'CheckSubdirs',1)];
             end
         end
     end
@@ -38,6 +37,7 @@ if isempty(eList)
     return;
 end
 
+eList = unique(eList);
 nE = length(eList);
 
 for iE = 1:nE

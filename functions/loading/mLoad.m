@@ -18,9 +18,8 @@ switch nargin
             nFolder = length(mFile);
             mList = cell(0,1);
             for iFolder = 1:nFolder
-                if exist(mFile{iFolder})==7
-                    cd(mFile{iFolder});
-                    mList = [mList;FindFiles('T*.mat','CheckSubdirs',1)];
+                if exist(mFile{iFolder},'file')
+                    mList = [mList;FindFiles('T*.mat','StartingDirectory',fileparts(mFile{iFolder}),'CheckSubdirs',1)];
                 elseif strcmp(mFile{iFolder}(end-3:end),'.mat')
                     mList = [mList;mFile{iFolder}];
                 end
