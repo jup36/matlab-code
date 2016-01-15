@@ -1,29 +1,34 @@
-function tagstatWM
-% Variable nspv, nssom, and wssom will be used.
-load('D:\Cloud\project\workingmemory_interneuron\data\celllist_20150527.mat');
-tFile = nspv;
+function stats = tagstatWM(tFile)
+%tagstatWM does statistical tests for optogenetic tagging
 
-% if nargin == 0; tFile = {}; end;
+if nargin == 0; stats = []; return; end;
 [tData tList] = tLoad(tFile);
 if isempty(tList); return; end;
 
 % Variables
-dt = 0.2;
-testWindow = 5;
+dt = 0.1;
+testWindow = 10;
 baseWindow = 400;
 
 nT = length(tList);
+[pSalt, lSalt, pLR] = deal(zeros(nT, 1));
+[timeLR, H1LR, H2LR] = deal({});
 for iT = 1:nT
-    disp(['### Analysing ', tList{iT}]);
+    disp(['### Analyzing ', tList{iT}]);
     [cellPath, cellName,~] = fileparts(tList{iT});
-    
+
     load([cellPath,'\Events.mat'], 'lighttime');
     lighttime = lighttime/1000;
-    
-    testMat = tagDataLoad(tData{iT}, lighttime, testWindow, baseWindow);
-    
-    [p, l] = saltTest(testMat, testWindow, dt)
+
+    [spikeLatency, spikeCensor] = tagDataLoad(tData{iT}, lighttime, testWindow, baseWindow);
+
+    [pSalt(iT), lSalt(iT)] = saltTest(spikeLatency, testWindow, dt);
+    [pLR(iT), time, H1, H2] = logRankTest(spikeLatency, spikeCensor);
+    timeLR = [timeLR; {time}];
+    H1LR = [H1LR; {H1}];
+    H2LR = [H2LR; {H2}];
 end
+stats = table(pSalt, lSalt, pLR, timeLR, H1LR, H2LR);
 
 function [time, censor] = tagDataLoad(spikeData, onsetTime, testRange, baseRange)
 %tagDataLoad makes dataset for statistical tests
