@@ -2,77 +2,67 @@ function tagstatCC(sessionFolder)
 %tagstatCC calculates statistical significance using log-rank test
 
 % Variables
+dt = 0.2;
 testRangeBlue = 10; % unit: ms
 baseRangeBlue = 400; % baseline
 testRangeRed = 400;
 baseRangeRed = 4400;
 
 % Find files
-if nargin == 0
-    ttFile = FindFiles('T*.t','CheckSubdirs',0); 
-else
-    if ~iscell(sessionFolder)
-        disp('Input argument is wrong. It should be cell array.');
-        return;
-    elseif isempty(sessionFolder)
-        ttFile = FindFiles('T*.t','CheckSubdirs',1);
-    else
-        nFolder = length(sessionFolder);
-        ttFile = cell(0,1);
-        for iFolder = 1:nFolder
-            if exist(sessionFolder{iFolder})==7 
-                cd(sessionFolder{iFolder});
-                ttFile = [ttFile;FindFiles('T*.t','CheckSubdirs',1)];
-            elseif strcmp(sessionFolder{iFolder}(end-1:end),'.t') 
-                ttFile = [ttFile;sessionFolder{iFolder}];
-            end
-        end
-    end
-end
-if isempty(ttFile)
-    disp('TT file does not exist!');
-    return;
-end
-ttData = LoadSpikes(ttFile,'tsflag','ts','verbose',0);
+if nargin == 0; sessionFolder = {}; end;
+[tData, tList] = tLoad(sessionFolder);
+if isempty(tList); return; end;
 
-nCell = length(ttFile);
+nCell = length(tList);
 for iCell = 1:nCell
-    disp(['### Log-rank test: ',ttFile{iCell}]);
-    [cellPath,cellName,~] = fileparts(ttFile{iCell});
+    disp(['### Tag stat test: ',tList{iCell}]);
+    [cellPath,cellName,~] = fileparts(tList{iCell});
     cd(cellPath);
     
     clear blueOnsetTime redOnsetTime
     load('Events.mat','blueOnsetTime','redOnsetTime');
-    spikeData = Data(ttData{iCell})/10;
+    spikeData = tData{iCell};
     
-    [p_tagBlue,time_tagBlue,H1_tagBlue,H2_tagBlue] = logRankTest(spikeData, blueOnsetTime, testRangeBlue, baseRangeBlue);
+    [timeBlue, censorBlue] = tagDataLoad(spikeData, blueOnsetTime, testRangeBlue, baseRangeBlue);
+    [timeRed, censorRed] = tagDataLoad(spikeData, redOnsetTime, testRangeRed, baseRangeRed);
+    
+    [p_tagBlue,time_tagBlue,H1_tagBlue,H2_tagBlue] = logRankTest(timeBlue, censorBlue);
     save([cellName,'.mat'],...
         'p_tagBlue','time_tagBlue','H1_tagBlue','H2_tagBlue',...
         '-append');
     
-    [p_tagRed,time_tagRed,H1_tagRed,H2_tagRed] = logRankTest(spikeData, redOnsetTime, testRangeRed, baseRangeRed);
+    [p_saltBlue, l_saltBlue] = saltTest(timeBlue, testRangeBlue, dt);
+    save([cellName,'.mat'],...
+        'p_saltBlue','l_tagBlue',...
+        '-append');
+    
+    [p_tagRed,time_tagRed,H1_tagRed,H2_tagRed] = logRankTest(timeRed, censorRed);
     save([cellName,'.mat'],...
         'p_tagRed','time_tagRed','H1_tagRed','H2_tagRed',...
         '-append');
 end
-disp('### Log-rank test done!');
+disp('### Tag stat test done!');
 
-function [p,time,H1,H2] = logRankTest(spikeData, onsetTime, testRange, baseRange)
-%logRankTest makes dataset for log-rank test
+function [time, censor] = tagDataLoad(spikeData, onsetTime, testRange, baseRange)
+%tagDataLoad makes dataset for statistical tests
 %   spikeData: raw data from MClust t file (in msec)
 %   onsetTime: time of light stimulation (in msec)
 %   testRange: binning time range for test (in msec)
 %   baseRange: binning time range for baseline (in msec)
+%
+%   time: nBin (nBin-1 number of baselines and 1 test) x nLightTrial
+%
 narginchk(4,4);
-if isempty(onsetTime); p = []; time = []; H1 = []; H2 = []; return; end;
+if isempty(onsetTime); time = []; censor = []; return; end;
 
-% if onsetTime interval is shorter than test+baseline range, omit.
+% If onsetTime interval is shorter than test+baseline range, omit.
 outBin = find(diff(onsetTime)<=(testRange+baseRange));
 outBin = [outBin;outBin+1];
 onsetTime(outBin(:))=[];
-if isempty(onsetTime); p = []; time = []; H1 = []; H2 = []; return; end;
+if isempty(onsetTime); time = []; censor = []; return; end;
 nLight = length(onsetTime);
 
+% Rearrange data
 bin = [-floor(baseRange/testRange)*testRange:testRange:0];
 nBin = length(bin);
 
@@ -96,7 +86,21 @@ for iLight=1:nLight
         end     
     end
 end
-base = [reshape(time(1:nBin,:),1,[]);reshape(censor(1:nBin,:),1,[])]';
+
+function [p,time,H1,H2] = logRankTest(time, censor)
+%logRankTest makes dataset for log-rank test
+
+if isempty(time) || isempty(censor); p = []; time = []; H1 = []; H2 = []; return; end;
+
+base = [reshape(time(1:(end-1),:),1,[]);reshape(censor(1:(end-1),:),1,[])]';
 test = [time(end,:);censor(end,:)]';
 
 [p,time,H1,H2] = logrank(test,base);
+
+function [p, l] = saltTest(time, wn, dt)
+if isempty(time) ; p = []; l= []; return; end;
+
+base = time(1:(end-1),:)';
+test = time(end,:)';
+
+[p, l] = salt2(test, base, wn, dt);
