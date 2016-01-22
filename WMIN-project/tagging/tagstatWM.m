@@ -7,7 +7,7 @@ if isempty(tList); return; end;
 
 % Variables
 dt = 0.1;
-testWindow = 10;
+testWindow = 5;
 baseWindow = 400;
 
 nT = length(tList);

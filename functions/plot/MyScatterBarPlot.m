@@ -8,6 +8,8 @@ function h = MyScatterBarPlot(y,x,barWidth,xColor)
 % y - value
 % x - group variable for y
 %
+%   Only compatible with <2014a version
+%
 % Dohoung Kim - June 2015
 group = unique(x);
 nGroup = length(group);
