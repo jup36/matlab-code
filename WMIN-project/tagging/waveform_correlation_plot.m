@@ -1,11 +1,11 @@
 function waveform_correlation_plot
 
-load('D:\GitHub\matlab-code\WMIN-project\tagging\waveform_correlation.mat');
+load('C:\Users\Lapis\OneDrive\git\matlab-code\WMIN-project\tagging\waveform_correlation.mat');
 
-nC = 22+14+9;
-r = [stat_pv.r; stat_nssom.r; stat_wssom.r];
-sponwv = [stat_pv.m_spont_wv; stat_nssom.m_spont_wv; stat_wssom.m_spont_wv];
-evokedwv = [stat_pv.m_evoked_wv; stat_nssom.m_evoked_wv; stat_wssom.m_evoked_wv];
+nC = 21+13+9;
+r = [stat_nspv.r; stat_nssom.r; stat_wssom.r];
+sponwv = [stat_nspv.m_spont_wv; stat_nssom.m_spont_wv; stat_wssom.m_spont_wv];
+evokedwv = [stat_nspv.m_evoked_wv; stat_nssom.m_evoked_wv; stat_wssom.m_evoked_wv];
 
 close all;
 fHandle = figure('PaperUnits','centimeters','PaperPosition',[2 2 8.9 6.88]);
@@ -20,4 +20,4 @@ end
 
 set(ha, 'Visible', 'off', 'YLim', [-2 2]);
 
-print(gcf, '-dtiff', '-r600', 'waveform_correlation.tif');
+print(gcf, '-depsc', '-r600', 'waveform_correlation.eps');

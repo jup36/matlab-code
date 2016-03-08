@@ -2,17 +2,18 @@ function waveform_correlation
 %waveform_correlation
 
 % Variable nspv, nssom, and wssom will be used.
-load('D:\Cloud\project\workingmemory_interneuron\data\celllist_20150527.mat');
+load('C:\Users\Lapis\OneDrive\project\workingmemory_interneuron\data\celllist_neuron.mat');
 
-stat_pv = wvform_load(nspv);
+stat_nspv = wvform_load(nspv);
+stat_wspv = wvform_load(wspv);
 stat_nssom = wvform_load(nssom);
 stat_wssom = wvform_load(wssom);
 
-save('waveform_correlation.mat', 'stat_pv', 'stat_nssom', 'stat_wssom');
+save('waveform_correlation.mat', 'stat_nspv', 'stat_wspv', 'stat_nssom', 'stat_wssom');
 
 function stats = wvform_load(mFile)
-lightwin = [0 10]; % ms
-sponwin = [-100 -10]; % ms
+lightwin = [0 20]; % ms
+sponwin = [-400 0]; % ms
 
 preext1 = '.mat';
 preext2 = '_\d.mat';
@@ -20,7 +21,7 @@ curext1 = '.clusters';
 curext2 = '.ntt';
 curext3 = '.t';
 
-predir = 'D:\\Cloud\\project\\workingmemory_interneuron\\data\\';
+predir = 'C:\\Users\\Lapis\\OneDrive\\project\\workingmemory_interneuron\\data\\';
 curdir = 'D:\\Cheetah_data\\workingmemory_interneuron\\';
 mFile = cellfun(@(x) regexprep(x,predir,curdir),mFile,'UniformOutput',false);
 
