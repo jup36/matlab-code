@@ -1,12 +1,13 @@
 function psthWM
-load('D:\Cloud\project\workingmemory_interneuron\data\celllist_20150527.mat');
+load('C:\Users\Lapis\OneDrive\project\workingmemory_interneuron\data\celllist_neuron.mat');
 
-addSpike(pc);
-addSpike(fs);
-
+% addSpike(pc);
+% addSpike(fs);
+addSpike(pv);
+addSpike(som);
 
 function addSpike(mFileList)
-predir = 'D:\\Cloud\\project\\workingmemory_interneuron\\data\\';
+predir = 'C:\\Users\\Lapis\\OneDrive\\project\\workingmemory_interneuron\\data\\';
 curdir = 'D:\\Cheetah_data\\workingmemory_interneuron\\';
 tFL = cellfun(@(x) regexprep(x,predir,curdir),mFileList,'UniformOutput',false);
 

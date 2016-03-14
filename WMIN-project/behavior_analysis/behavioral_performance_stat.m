@@ -25,6 +25,11 @@ for iT = 1:4
     M{iT} = zeros(2, 2, nM);
 end
 
+M2 = cell(12,1);
+for iT = 1:12
+    M2{iT} = zeros(2, 2, nM);
+end
+
 for iM = 1:nM
     inS = find(strcmp(mouseNm, mList{iM}));
     nS = length(inS);
@@ -65,6 +70,12 @@ for iM = 1:nM
         pdiv(iM, iS) = chisq([correct, light]);
         perf.y(iM, iS)  = nanmean(correct(light==1));
         perf.n(iM, iS) = nanmean(correct(light==0));
+        
+        for iC = 1:2
+            for iL = 1:2
+                M2{iS}(iC, iL, iM) = sum(correct==(2-iC) & light==(2-iL));
+            end
+        end
     end
     
     
@@ -86,10 +97,18 @@ pMH = ones(4,1);
 for iT = 1:4
     py = perf.y(:,(iT-1)*3+(1:3)); py = py(:)';
     pn = perf.n(:,(iT-1)*3+(1:3)); pn = pn(:)';
-    [h, p] = ttest(py, pn)
+    [h, p] = ttest(py, pn);
+    psr = signrank(py, pn);
     pMH(iT) = MantelHaenTest(M{iT});
 end
 
-        
+ptt = zeros(1,12);
+psr = zeros(1,12);
+pMH2 = zeros(1,12);
+for iT = 1:12
+    [~,ptt(iT)] = ttest(perf.y(:,iT), perf.n(:,iT));
+    psr(iT) = signrank(perf.y(:,iT), perf.n(:,iT));
+    pMH2(iT) = MantelHaenTest(M2{iT});
+end
                     
 
