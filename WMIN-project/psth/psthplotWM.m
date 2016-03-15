@@ -1,4 +1,4 @@
-function psthplot_2_1(folders)
+function psthplotWM(folders)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Object: Mat으로 저장된 정보로 PSTH/Raster/Tagging 등의 그림을 그린다.
 % Author: Dohoung Kim
