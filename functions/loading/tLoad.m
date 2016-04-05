@@ -20,7 +20,7 @@ else
         tList = cell(0,1);
         for iFolder = 1:nFolder
             if exist(tFile{iFolder},'dir')
-                tList = [tList;FindFiles('T*.t','StartingDirectory',fileparts(tFile{iFolder}),'CheckSubdirs',1)];
+                tList = [tList;FindFiles('T*.t','StartingDirectory',tFile{iFolder},'CheckSubdirs',1)];
             elseif exist(tFile{iFolder},'file') == 2
                 [pathstr, name, ext] = fileparts(tFile{iFolder});
                 if strcmp(ext, '.t')

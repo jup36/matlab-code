@@ -3,7 +3,7 @@ function tagstatCC(sessionFolder)
 
 % Variables
 dt = 0.2;
-testRangeBlue = 10; % unit: ms
+testRangeBlue = 5; % unit: ms
 baseRangeBlue = 400; % baseline
 testRangeRed = 400;
 baseRangeRed = 4400;
@@ -33,7 +33,7 @@ for iCell = 1:nCell
     
     [p_saltBlue, l_saltBlue] = saltTest(timeBlue, testRangeBlue, dt);
     save([cellName,'.mat'],...
-        'p_saltBlue','l_tagBlue',...
+        'p_saltBlue','l_saltBlue',...
         '-append');
     
     [p_tagRed,time_tagRed,H1_tagRed,H2_tagRed] = logRankTest(timeRed, censorRed);

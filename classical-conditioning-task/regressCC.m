@@ -1,33 +1,11 @@
 function regressCC(cellFolder, binWindow, binStep)
 %regressCC calculates coefficients for each behavioral variables
 warning off;
+rtdir = pwd;
 
-% find files
-switch nargin
-    case 0
-        matFile = FindFiles('T*.mat','CheckSubdirs',0); 
-    case 1 
-        if ~iscell(cellFolder) 
-            disp('Input argument is wrong. It should be cell array.');
-            return;
-        elseif isempty(cellFolder)
-            matFile = FindFiles('T*.mat','CheckSubdirs',1);
-        else
-            nFolder = length(cellFolder);
-            matFile = cell(0,1);
-            for iFolder = 1:nFolder
-                if exist(cellFolder{iFolder})==7
-                    cd(cellFolder{iFolder});
-                    matFile = [matFile;FindFiles('T*.mat','CheckSubdirs',1)];
-                elseif strcmp(cellFolder{iFolder}(end-3:end),'.mat')
-                    matFile = [matFile;cellFolder{iFolder}];
-                end
-            end
-        end
-end
-if isempty(matFile)
-    disp('Mat file does not exist!');
-    return;
+% variables
+if nargin == 0
+    cellFolder = {};
 end
 if nargin < 2
     binWindow = 500;
@@ -36,16 +14,18 @@ elseif nargin==2
     binStep = binWindow;
 end
 
-rtdir = pwd;
-nFile = length(matFile);
+% load files
+mList = mLoad(cellFolder);
+if isempty(mList); return; end;
+eList = cellfun(@(x) [fileparts(x),'\Events.mat'], mList, 'UniformOutput',false);
 
-for iFile = 1:nFile
-    disp(['### Analyzing ',matFile{iFile},'...']);
-    [cellDir,cellName,~] = fileparts(matFile{iFile});
+nF = length(mList);
+for iF = 1:nF
+    disp(['### Analyzing ',mList{iF},'...']);
+    [cellDir,cellName,~] = fileparts(mList{iF});
 
-    cd(cellDir);
-    load(matFile{iFile});
-    load('Events.mat');
+    load(mList{iF});
+    load(eList{iF});
 
     [reg_time, reg_spk] = spikeBin(spikeTime, win, binWindow, binStep);
     [regRw_time, regRw_spk] = spikeBin(spikeTimeRw, winRw, binWindow, binStep);
@@ -68,7 +48,7 @@ for iFile = 1:nFile
     if any(nomod)
         reg_cr_nomod = slideReg(reg_time, reg_spk(nomod,:), [value(nomod) reward(nomod) punishment(nomod)]);
         regRw_cr_nomod = slideReg(regRw_time, regRw_spk(nomod & inRw,:), [value(nomod & inRw) reward(nomod & inRw) punishment(nomod & inRw)]);
-        save(matFile{iFile}, 'reg_cr_nomod', 'regRw_cr_nomod', '-append');
+        save(mList{iF}, 'reg_cr_nomod', 'regRw_cr_nomod', '-append');
     end
     
     % regression (cue, reward | modulation==1)
@@ -78,7 +58,7 @@ for iFile = 1:nFile
         reg_crm = slideReg(reg_time, reg_spk, [value reward punishment modulation value.*modulation reward.*modulation punishment.*modulation]);
         regRw_cr_mod = slideReg(regRw_time, regRw_spk(mod & inRw,:), [value(mod & inRw) reward(mod & inRw) punishment(mod & inRw)]);
         regRw_crm = slideReg(regRw_time, regRw_spk(inRw,:), [value(inRw) reward(inRw) punishment(inRw) modulation(inRw) value(inRw).*modulation(inRw) reward(inRw).*modulation(inRw) punishment(inRw).*modulation(inRw)]);
-        save(matFile{iFile}, 'reg_cr_mod', 'reg_crm', 'regRw_cr_mod', 'regRw_crm', '-append');
+        save(mList{iF}, 'reg_cr_mod', 'reg_crm', 'regRw_cr_mod', 'regRw_crm', '-append');
     end
 end
 disp('### Regression analysis done!');

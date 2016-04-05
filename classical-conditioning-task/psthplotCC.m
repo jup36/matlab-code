@@ -2,33 +2,10 @@ function psthplotCC(cellFolder)
 %psthplotCC draws summary plot for each cell
 
 % Find files
-switch nargin
-    case 0
-        matFile = FindFiles('T*.mat','CheckSubdirs',0); 
-    case 1 
-        if ~iscell(cellFolder) 
-            disp('Input argument is wrong. It should be cell array.');
-            return;
-        elseif isempty(cellFolder)
-            matFile = FindFiles('T*.mat','CheckSubdirs',1);
-        else
-            nFolder = length(cellFolder);
-            matFile = cell(0,1);
-            for iFolder = 1:nFolder
-                if exist(cellFolder{iFolder})==7
-                    cd(cellFolder{iFolder});
-                    matFile = [matFile;FindFiles('T*.mat','CheckSubdirs',1)];
-                elseif strcmp(cellFolder{iFolder}(end-3:end),'.mat')
-                    matFile = [matFile;cellFolder{iFolder}];
-                end
-            end
-        end
-end
-if isempty(matFile)
-    disp('Mat file does not exist!');
-    return;
-end
-nFile = length(matFile);
+if nargin == 0; cellFolder = {}; end;
+mList = mLoad(cellFolder);
+if isempty(mList); return; end;
+nFile = length(mList);
 rtdir = pwd;
 
 % Plot properties
@@ -100,13 +77,13 @@ cueName = {'A','B','C','D'};
 pthreshold = 0.05;
 
 for iFile = 1:nFile
-    [cellDir,cellName,~] = fileparts(matFile{iFile});
+    [cellDir,cellName,~] = fileparts(mList{iFile});
     cellDirSplit = regexp(cellDir,'\','split');
     cellFigName = strcat(cellDirSplit(end-1),'_',cellDirSplit(end),'_',cellName);
     
     cd(cellDir);
     clear regRw_cr_mod regRw_crm
-    load(matFile{iFile});
+    load(mList{iFile});
     load('Events.mat');
         
     if ~any(trialResult(2:2:end))
@@ -121,7 +98,7 @@ for iFile = 1:nFile
     fHandle = figure('PaperUnits','centimeters','PaperPosition',[0 0 18.3 13.725]);
     hText = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,1:2,[],wideInterval),tightInterval));
     hold on;
-    text(0,1.2,matFile{iFile}, 'FontSize',fontM, 'Interpreter','none');
+    text(0,1.2,mList{iFile}, 'FontSize',fontM, 'Interpreter','none');
     pText = '';
     for iCue = 1:4
         if sum(trialResult(4*(iCue-1)+(1:4)))>0
