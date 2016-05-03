@@ -107,7 +107,7 @@ void mexFunction(int nOUT, mxArray *pOUT[], int nINP, const mxArray *pINP[])
     {
         for(i1 = 0; i1 < nt1; i1++)
         {
-            lbound = (t1[i1] + jitter*(((double)rand())/32767*2-1)) - w;
+            lbound = t1[i1] + jitter*((double)rand()/32767*2 - 1) - w;
             
             while(i2 < nt2 && t2[i2] < lbound) i2++;
             while(i2 > 0 && t2[i2-1] > lbound) i2--;
