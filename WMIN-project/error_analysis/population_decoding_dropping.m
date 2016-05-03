@@ -3,86 +3,85 @@ clc; clearvars; close all;
 load('C:\users\lapis\OneDrive\project\workingmemory_interneuron\data\celllist_neuron.mat', 'nspv', 'nssom', 'wssom', 'fs', 'pc');
 load('C:\users\lapis\OneDrive\git\matlab-code\WMIN-project\error_analysis\error_sessions.mat');
 
-stat_test = 2;
-timeWindow = [2000 3000];
+stat_test = 1; % 1: Bayesian decoding, 2: LDA
+timeWindow = [0000 3000]; % in ms
 binWindow = timeWindow(2) - timeWindow(1);
 binStep = binWindow;
 nTest = 1;
-nTrain = 20 - nTest;
+nTrain = 10;
 nIter = 100;
 
 cells = {nspv, [nssom; wssom], fs, pc};
 result.som.total = [result.nssom.total; result.wssom.total];
 cellNm = {'nspv', 'som', 'fs', 'pc'};
 nT = length(cellNm);
-groupTrain = [ones(nTrain, 1); 2*ones(nTrain, 1)];
-groupTest = [ones(2*nTest, 1); 2*ones(2*nTest, 1)];
+% groupTest = [ones(2*nTest, 1); 2*ones(2*nTest, 1)];
 
+T = struct;
 for iT = 1:4
-    T = table();
     trialSummary =result.(cellNm{iT}).total(:,[1 4 5 8]);
-    Cs = find(trialSummary(:,1)>=(nTrain+nTest) & trialSummary(:,3)>=(nTrain+nTest) & trialSummary(:,2)>=nTest & trialSummary(:,4)>=nTest);
-    nC = length(Cs);
     
-    T.cellName = cells{iT}(Cs);
-    T.trialSummary = trialSummary(Cs,:);
-    
-    spkData = cell(nC, 4);
-    for iC = 1:nC
-        load([fileparts(T.cellName{iC}),'\Events.mat'], 'trialresult');
-        load(T.cellName{iC}, 'spikeTime');
-        [bin, spk] = spikeBin(spikeTime, timeWindow, binWindow, binStep);
+    for iL = 1:2
+        if iL == 1
+            Cs = find(trialSummary(:,1)>=(nTrain+nTest) & trialSummary(:,3)>=nTrain & trialSummary(:,2)>=nTest);
+        else
+            Cs = find(trialSummary(:,1)>=nTrain & trialSummary(:,3)>=(nTrain+nTest) & trialSummary(:,4)>=nTest);
+        end
+        nC = length(Cs);
         
-        index = 0;
-        for iP = 1:2
-            for iF = [3-iP iP]
-                index = index + 1;
-                inTrial = trialresult(:, 1)==iP & trialresult(:,2)==iF & trialresult(:,4)==0;
-                spkData{iC, index} = spk(inTrial, :);
+        T(iT, iL).cellName = cells{iT}(Cs);
+        T(iT, iL).trialSummary = trialSummary(Cs,:);
+        
+        spkData = cell(nC, 3);
+        for iC = 1:nC
+            load([fileparts(T(iT, iL).cellName{iC}),'\Events.mat'], 'trialresult');
+            load(T(iT, iL).cellName{iC}, 'spikeTime');
+            [bin, spk] = spikeBin(spikeTime, timeWindow, binWindow, binStep);
+            
+            for iP = [1:3; iL (3-iL) iL; (3-iL) iL iL]
+                inTrial = trialresult(:, 1)==iP(2) & trialresult(:,2)==iP(3) & trialresult(:,4)==0;
+                spkData{iC, iP(1)} = spk(inTrial, :);
             end
         end
-    end
-    nB = length(bin);
-    T.spk = spkData;
-    
-    performanceCorrect = zeros(nIter, nC);
-    performanceError = zeros(nIter, nC);
-    for iI = 1:nIter
-        disp(['Iteration: ', num2str(iI)]);
-        decodingResult = zeros(4*nTest, nC);
-        for jC = 1:nC
-            spkSubgroup = T.spk(randperm(nC, jC), :);
-            spkSample = cell2mat(cellfun(@(x, y) datasample(x, y, 'Replace', false), spkSubgroup, repmat([{nTrain+nTest} {nTest}], jC, 2), 'UniformOutput', false)');
-            
-            spkTest = spkSample([(1+nTrain):(nTrain+2*nTest) (1+2*nTrain+2*nTest):end], :);
-            spkTrain = spkSample([1:nTrain (1+nTrain+2*nTest):(2*nTrain+2*nTest)], :);
-            
-            outCell = std(spkTrain(groupTrain == 1,:))==0 | std(spkTrain(groupTrain == 2,:))==0;
-            spkTrain(:, outCell) = [];
-            
-            spkTest = spkTest(:,~outCell);
-            
-            try
-                if stat_test==1
-                    obj = fitcnb(spkTrain, groupTrain);
-                    [label, score] = predict(obj, spkTest);
-                else
-                    label = classify(spkTest, spkTrain, groupTrain, 'diaglinear');
-                end
+        nB = length(bin);
+        T(iT, iL).spk = spkData;
+        
+        performanceCorrect = zeros(nIter, nC);
+        performanceError = zeros(nIter, nC);
+        for iI = 1:nIter
+            disp(['Cell type: ', cellNm{iT}, ', Cue: ', num2str(iL), ', Iteration: ', num2str(iI)]);
+            decodingResult = zeros(2*nTest, nC);
+            for jC = 1:nC
+                spkSubgroup = T(iT, iL).spk(randperm(nC, jC), :);
+                spkSample = cell2mat(cellfun(@(x, y) datasample(x, y, 'Replace', false), spkSubgroup, repmat([{nTrain+nTest} {nTrain} {nTest}], jC, 1), 'UniformOutput', false)');
                 
-                decodingResult(:, jC) = label==groupTest;
-            catch err
-                decodingResult(:, jC) = NaN;
-                disp(err.message);
+                spkTrain = spkSample([1:nTrain, (1:nTrain) + (nTrain+nTest)], :);
+                spkTest = spkSample([(1:nTest)+nTrain, (1:nTest)+(2*nTrain+nTest)], :);
+                                
+                outCell = std(spkTrain(1:nTrain,:))==0 | std(spkTrain((1+nTrain):(2*nTrain),:))==0;
+                spkTrain(:, outCell) = [];
+                spkTest(:,outCell) = [];
+                
+                try
+                    if stat_test==1
+                        obj = fitcnb(spkTrain, [iL*ones(nTrain, 1); (3-iL)*ones(nTrain, 1)]);
+                        [label, score] = predict(obj, spkTest);
+                    else
+                        label = classify(spkTest, spkTrain, [iL*ones(nTrain, 1); (3-iL)*ones(nTrain, 1)], 'diaglinear');
+                    end
+                    decodingResult(:, jC) = label==(iL*ones(2*nTest, 1));
+                catch err
+                    decodingResult(:, jC) = NaN;
+                    disp(err.message);
+                end
             end
+            performanceCorrect(iI, :) = nanmean(decodingResult(1:nTest, :), 1);
+            performanceError(iI, :) = nanmean(decodingResult((1:nTest)+nTest, :), 1);
         end
-        performanceCorrect(iI, :) = nanmean(decodingResult([1:nTest (1+2*nTest):(3*nTest)], :));
-        performanceError(iI, :) = nanmean(decodingResult([(1+nTest):(2*nTest) (1+3*nTest):end], :));
+        T(iT, iL).nCell = nC;
+        T(iT, iL).performance.correct = performanceCorrect;
+        T(iT, iL).performance.error = performanceError;
     end
-    
-    dropResult_lda_23.(cellNm{iT}).nCell = nC;
-    dropResult_lda_23.(cellNm{iT}).performance.correct = performanceCorrect;
-    dropResult_lda_23.(cellNm{iT}).performance.error = performanceError;
 end
 
-save('cell_drop_1_19.mat', 'dropResult_lda_23', '-append');
+save('error_decoding.mat', 'T');
