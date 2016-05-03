@@ -49,3 +49,16 @@ Temporary Items
 *.tif
 *.mat
 *.asv
+WMIN-project/error_analysis/old/error_decoding.m
+WMIN-project/error_analysis/old/error_decoding_bayes.m
+WMIN-project/error_analysis/old/error_decoding_c_vs_e_plot.m
+WMIN-project/error_analysis/old/error_decoding_bayes_btw_pvsom.m
+WMIN-project/error_analysis/old/error_decoding_bayes_plot.m
+WMIN-project/error_analysis/old/error_decoding_lda_btw_pvsom.m
+classical-conditioning-task/cell_classification/temp.m
+WMIN-project/error_analysis/old/error_decoding_lda.m
+WMIN-project/error_analysis/old/error_decoding_lda_plot.m
+WMIN-project/error_analysis/old/error_decoding_plot.m
+WMIN-project/error_analysis/old/error_decoding_template_matching.m
+WMIN-project/error_analysis/old/error_decoding_template_matching_btw_pvsom.m
+WMIN-project/error_analysis/old/error_decoding_template_matching_plot.m
