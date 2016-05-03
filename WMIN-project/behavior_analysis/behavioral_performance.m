@@ -4,8 +4,13 @@ miceType = 'PV';
 startingDir = ['C:\Users\Lapis\OneDrive\project\workingmemory_interneuron\data\Behavior\', miceType, 'ChR'];
 findingFile = [miceType, 'ChR*result*.txt'];
 sList = FindFiles(findingFile, 'StartingDirectory', startingDir, 'CheckSubdirs', 0);
+
+outCell = cellfun(@(x) ~isempty(strfind(x, 'PVChR4')), sList);
+sList(outCell) = [];
+
 [~, cellNm] = cellfun(@fileparts, sList, 'UniformOutput', false);
 cellNms = cellfun(@(x) strsplit(x, '_'), cellNm, 'UniformOutput', false);
+
 
 mouseNm = cellfun(@(x) x{1}, cellNms, 'UniformOutput', false);
 % sessionTime = datetime(cellfun(@(x) [x{2} x{3}], cellNms, 'UniformOutput', false), 'InputFormat', 'yyyyMMddHHmmss');

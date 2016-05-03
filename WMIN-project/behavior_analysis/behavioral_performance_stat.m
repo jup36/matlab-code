@@ -1,11 +1,15 @@
 clearvars;
 
-miceType = 'SOM';
+miceType = 'PV';
 startingDir = ['C:\Users\Lapis\OneDrive\project\workingmemory_interneuron\data\Behavior\', miceType, 'ChR'];
 findingFile = [miceType, 'ChR*result*.txt'];
 sList = FindFiles(findingFile, 'StartingDirectory', startingDir, 'CheckSubdirs', 0);
 inCell = cellfun(@(x) ~isempty(strfind(x, 'random')) | ~isempty(strfind(x, '80mW')), sList);
 sList = sList(inCell);
+
+outCell = cellfun(@(x) ~isempty(strfind(x, 'PVChR4')), sList);
+sList(outCell) = [];
+
 
 [~, cellNm] = cellfun(@fileparts, sList, 'UniformOutput', false);
 cellNms = cellfun(@(x) strsplit(x, '_'), cellNm, 'UniformOutput', false);
@@ -93,12 +97,14 @@ for iM = 1:nM
     end
 end
 
+psrblock = zeros(1,4);
 pMH = ones(4,1);
+pttblock = zeros(1,4);
 for iT = 1:4
     py = perf.y(:,(iT-1)*3+(1:3)); py = py(:)';
     pn = perf.n(:,(iT-1)*3+(1:3)); pn = pn(:)';
-    [h, p] = ttest(py, pn);
-    psr = signrank(py, pn);
+    [h, pttblock(iT)] = ttest(py, pn);
+    psrblock(iT) = signrank(py, pn);
     pMH(iT) = MantelHaenTest(M{iT});
 end
 
