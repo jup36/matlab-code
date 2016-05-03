@@ -1,19 +1,19 @@
 #include "mex.h"
-#include <time.h>
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-    int i = 0;
+    int nbins;
+    double jitter;
+    
     double *C;
-    srand(time(NULL));
     
-    
-    plhs[0] = mxCreateDoubleMatrix(10, 10, mxREAL);
+    jitter = mxGetScalar(prhs[0]);
+    nbins = (int)mxGetScalar(prhs[1]);
+        
+    plhs[0] = mxCreateDoubleMatrix(nbins, 1, mxREAL);
     C = mxGetPr(plhs[0]);
     
-    
-    
-    for (i=0; i < 10; i++) {
-        C[i, 2] = 5*(((double)rand())/32767*2 - 1) - 10;
+    for (int i = 0; i < nbins; i++) {
+        C[i] = jitter*((double)rand()/32767*2 - 1);
     }
 }
