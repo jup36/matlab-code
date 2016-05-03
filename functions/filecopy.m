@@ -1,26 +1,23 @@
-clc; clear all; close all;
-startFolder = 'D:\Cheetah_data\classical_conditioning\PVCC1\';
-sessionFolder = dir([startFolder,'*s3*']);
-nSession = length(sessionFolder);
+clc; clearvars; close all;
 
-cellList = {};
-for iSession = 1:nSession
-    if sessionFolder(iSession).isdir
-        cellList = [cellList; FindFiles('E*.nev','StartingDirectory',[startFolder,sessionFolder(iSession).name])];
-        cellList = [cellList; FindFiles('E*.mat','StartingDirectory',[startFolder,sessionFolder(iSession).name])];
-        cellList = [cellList; FindFiles('T*.mat','StartingDirectory',[startFolder,sessionFolder(iSession).name])];
-    end
-end
-nCell = length(cellList);
+startFolder = 'D:\Cheetah_data\';
+folderToMove = uigetdir(startFolder, 'Choose folders to move. All mat at files in subdirectory will be moved.');
+
+targetStartFolder = 'C:\Users\Lapis\OneDrive\project\';
+targetFolder = uigetdir(targetStartFolder, 'Choose folder where selected files will be moved.');
+
+cellList = FindFiles('*.mat','StartingDirectory',folderToMove, 'CheckSubdirs', true);
+nC = length(cellList);
 
 prevdir = '';
-for iCell = 1:nCell
-    [celldir,cellnm,~] = fileparts(cellList{iCell});
-    fder = strsplit(celldir,'\');
-    nwdir = ['D:\Data\',fder{end-1},'\',fder{end},'\'];
-    if ~strcmp(prevdir,celldir)
-        mkdir(nwdir);
+for iCell = 1:nC
+    [cellDir, cellNm,~] = fileparts(cellList{iCell});
+    
+    newCellDir = strrep(cellDir, folderToMove, targetFolder);
+    
+    if ~strcmp(prevdir,newCellDir)
+        mkdir(newCellDir);
     end
-    copyfile(cellList{iCell},nwdir);
-    prevdir = celldir;
+    copyfile(cellList{iCell},newCellDir);
+    prevdir = newCellDir;
 end
