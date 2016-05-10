@@ -2,10 +2,12 @@
 clc; clearvars; close all;
 load('error_decoding.mat');
 
-fillColor = {[0.5 0.5 0.5], [1 0.5 0.5]};
-lineColor = {[0 0 0], [1 0 0]};
+fillColor = {[1 0.75 0.75], [0.75 0.75 1];[1 0.5 0.5], [0.5 0.5 1]};
+lineColor = {[0.25 0 0], [0 0 0.25];[1 0.5 0.5], [0.5 0.5 1]};
 typeName = {'PV', 'SOM', 'Type I', 'Type II'};
 cellName = {'nspv', 'som', 'fs', 'pc'};
+
+T = T_lda_01_fr05_pref;
 
 fHandle = figure('PaperUnits','centimeters','PaperPosition',[2 2 8.5 6.375]);
 for iT = 1:4
@@ -24,8 +26,8 @@ for iT = 1:4
             sC = [1:nC(iL) nC(iL):-1:1];
             
             plot([1 nC(iL)], [50 50], 'LineStyle', '-', 'LineWidth', 0.3, 'Color', [0.8 0.8 0.8]);
-            fill(sC, 100*ssP, fillColor{iP}, 'LineStyle', 'none', 'FaceAlpha', 0.5);
-            plot(1:nC(iL), 100*mP, 'LineWidth', 0.5, 'Color', lineColor{iP});
+            fill(sC, 100*ssP, fillColor{iP, iL}, 'LineStyle', 'none', 'FaceAlpha', 0.5);
+            plot(1:nC(iL), 100*mP, 'LineWidth', 0.5, 'Color', lineColor{iP, iL});
         end
     end
     set(gca, 'TickDir', 'out', 'LineWidth', 0.2', 'FontSize', 4, ...
@@ -42,4 +44,4 @@ for iT = 1:4
     end;
 end
 
-print(fHandle, '-dtiff', '-r300', 'population_decoding_dropping.tif');
+print(fHandle, '-dtiff', '-r300', 'population_decoding_dropping_lda_01s_fr05_pref.tif');
