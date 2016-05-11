@@ -1,4 +1,4 @@
-function [xpt,ypt,spikeBin,spikeHist,spikeConv,spikeConvZ] = rasterPSTH(spikeTime, trialIndex, win, binSize, resolution, dot)
+function [xpt,ypt,spikeBin,spikeHist,spikeConv,spikeConvZ, spikeSEM] = rasterPSTH(spikeTime, trialIndex, win, binSize, resolution, dot)
 %rasterPSTH converts spike time into raster plot
 %   spikeTime: cell array. each cell contains vector array of spike times per each trial. unit is msec
 %   trialIndex: number of rows should be same as number of trials (length of spikeTime)
@@ -22,16 +22,15 @@ trialResult = sum(trialIndex);
 resultSum = [0 cumsum(trialResult)];
 
 yTemp = [0:nTrial-1; 1:nTrial; NaN(1,nTrial)]; % template for ypt
-xpt = cell(1,nCue);
-ypt = cell(1,nCue);
-spikeHist = zeros(nCue,nSpikeBin);
-spikeConv = zeros(nCue,nSpikeBin);
+[xpt, ypt] = deal(cell(1,nCue));
+[spikeHist, spikeConv] = deal(zeros(nCue,nSpikeBin));
+spikeSEM = zeros(nCue, 2*nSpikeBin);
 
 for iCue = 1:nCue
     if trialResult(iCue) == 0
         spikeHist(iCue,:) = NaN;
         spikeConv(iCue,:) = NaN;
-        continue; 
+        continue;
     end
     
     % raster
@@ -47,7 +46,7 @@ for iCue = 1:nCue
     else
         xpt{iCue} = xptTemp(:);
     end
-
+    
     yptTemp = [];
     for iy = 1:trialResult(iCue)
         yptTemp = [yptTemp repmat(yTemp(:,resultSum(iCue)+iy),1,nSpikePerTrial(iy))];
@@ -57,13 +56,21 @@ for iCue = 1:nCue
     else
         ypt{iCue} = yptTemp(:);
     end
-
+    
     % psth
-    spkhist_temp = histc(spikeTemp,spikeBin)/(binSize/10^3*trialResult(iCue));
-    spkconv_temp = conv(spkhist_temp,fspecial('Gaussian',[1 5*resolution],resolution),'same');
-%     spkconv_temp = ssvkernel(spikeTemp,spikeBin)*nSpikeTotal*1000/trialResult(iCue);
-    spikeHist(iCue,:) = spkhist_temp;
-    spikeConv(iCue,:) = spkconv_temp;
+    spkTemp = cell2mat(cellfun(@(x) histc(x, spikeBin, 2)/(binSize/10^3), spikeTime(trialIndex(:,iCue)), 'UniformOutput', false));
+    
+    spkhist_mean = sum(spkTemp, 1) / trialResult(iCue);
+    spkhist_sem = std(spkTemp, [], 1) / sqrt(trialResult(iCue));
+    
+    spkconv_mean = conv(spkhist_mean,fspecial('Gaussian',[1 5*resolution],resolution),'same');
+    spkconv_u_sem = conv(spkhist_mean+spkhist_sem, fspecial('Gaussian',[1 5*resolution],resolution),'same');
+    spkconv_l_sem = conv(spkhist_mean-spkhist_sem, fspecial('Gaussian',[1 5*resolution],resolution),'same');
+    
+    %     spkconv_temp = ssvkernel(spikeTemp,spikeBin)*nSpikeTotal*1000/trialResult(iCue);
+    spikeHist(iCue,:) = spkhist_mean;
+    spikeConv(iCue,:) = spkconv_mean;
+    spikeSEM(iCue,:) = [spkconv_l_sem flip(spkconv_u_sem)];
 end
 
 totalHist = histc(cell2mat(spikeTime),spikeBin)/(binSize/10^3*nTrial);
