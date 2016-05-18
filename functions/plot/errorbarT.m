@@ -26,6 +26,7 @@ function errorbarT(h,w,t,xtype)
 %   http://www.mathworks.com/matlabcentral/newsreader/author/94805
 %   http://www.developpez.net/forums/u125006/dut/
 % It was further modified by Arnaud Laurent and Jerome Briot.
+% Updated: May 16th, 2016 by Dohoung Kim
 
 % Check numbers of arguments
 error(nargchk(1,4,nargin))
@@ -61,6 +62,7 @@ if strcmpi(flagtype,'hggroup') % ERRORBAR(...)
 
     set(hh(2),'xdata',x(:))	% Change error bars on the figure
     set(hh(2), 'LineWidth', t);
+%     set(hh(1), 'LineStyle', 'none');
     
 else  % ERRORBAR('V6',...) %ALAN: seems like these two could be combined...
     

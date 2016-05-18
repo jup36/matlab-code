@@ -26,7 +26,7 @@ for iGroup = 1:nGroup
     h(iGroup).bar = bar(iGroup,yMean,'FaceColor',xColor{iGroup},'LineStyle','none','BarWidth',barWidth);
     h(iGroup).errorbar = errorbar(iGroup,yMean,ySem,'LineWidth',2,'Color',xColor{iGroup});
     
-    errorbarT(h(iGroup).errorbar,0.25,1);
+    errorbarT(h(iGroup).errorbar,0.25,0.5);
 end
 set(gca,'Box','off','TickDir','out','FontSize',5,'LineWidth',0.2,...
     'XLim',[0.5 nGroup+0.5],'XTick',1:nGroup);
