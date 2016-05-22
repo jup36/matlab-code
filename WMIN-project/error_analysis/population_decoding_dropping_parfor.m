@@ -6,7 +6,8 @@ load('C:\users\lapis\OneDrive\project\workingmemory_interneuron\data\celllist_ne
 load('C:\users\lapis\OneDrive\git\matlab-code\WMIN-project\error_analysis\error_sessions.mat');
 
 stat_test = 2; % 1: Bayesian decoding, 2: LDA
-timeWindow = [2000 3000]; % in ms
+statName = {'bayes', 'lda'};
+timeWindow = [3000 4000]; % in ms
 binWindow = timeWindow(2) - timeWindow(1);
 binStep = binWindow;
 nTest = 1;
@@ -20,8 +21,8 @@ nT = length(cellNm);
 for iT = 1:nT
     trialSummary = result.(cellNm{iT}).total(:,[1 4 5 8]);
     
-    LRreverse = ~cellfun(@isempty, strfind(cells{iT}, 'PV36')) | ~cellfun(@isempty, strfind(cells{iT}, 'Sst10'));
-    trialSummary(LRreverse, :) = trialSummary(LRreverse, [3 4 1 2]);
+%     LRreverse = ~cellfun(@isempty, strfind(cells{iT}, 'PV36')) | ~cellfun(@isempty, strfind(cells{iT}, 'Sst10'));
+%     trialSummary(LRreverse, :) = trialSummary(LRreverse, [3 4 1 2]);
     
     fr = result.(cellNm{iT}).fr;
     for iL = 1:2
@@ -42,11 +43,11 @@ for iT = 1:nT
             [bin, spk] = spikeBin(spikeTime, timeWindow, binWindow, binStep);
             
             for iP = [1:3; iL (3-iL) iL; (3-iL) iL iL] % contra>ipsi, ipsi>contra, contra>contra
-                if (~isempty(strfind(T(iT, iL).cellName{iC},'PV36')) || ~isempty(strfind(T(iT, iL).cellName{iC},'Sst10')))
-                    inTrial = trialresult(:, 1)==(3-iP(2)) & trialresult(:,2)==(3-iP(3)) & trialresult(:,4)==0;
-                else
+%                 if (~isempty(strfind(T(iT, iL).cellName{iC},'PV36')) || ~isempty(strfind(T(iT, iL).cellName{iC},'Sst10')))
+%                     inTrial = trialresult(:, 1)==(3-iP(2)) & trialresult(:,2)==(3-iP(3)) & trialresult(:,4)==0;
+%                 else
                     inTrial = trialresult(:, 1)==iP(2) & trialresult(:,2)==iP(3) & trialresult(:,4)==0;
-                end
+%                 end
                 spkData{iC, iP(1)} = spk(inTrial, :);
             end
         end
@@ -129,7 +130,6 @@ T(3, 2).performance.error = pE32;
 T(4, 1).performance.error = pE41;
 T(4, 2).performance.error = pE42;
 
-T_lda_23_fr05 = T;
-
-save('error_decoding.mat', 'T_lda_23_fr05', '-append');
+eval(['T_', statName{stat_test},'_', num2str(timeWindow(1)/1000, 1), num2str(timeWindow(2)/1000, 1),'_fr05_lr = T;']);
+save('error_decoding.mat', ['T_', statName{stat_test},'_', num2str(timeWindow(1)/1000, 1), num2str(timeWindow(2)/1000, 1),'_fr05_lr'], '-append');
 toc;

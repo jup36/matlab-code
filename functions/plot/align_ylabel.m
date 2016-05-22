@@ -1,4 +1,7 @@
-function align_ylabel(axHandles)
+function align_ylabel(axHandles, xShift)
+if nargin < 2
+    xShift = 0;
+end
 nAx = size(axHandles);
 hYLabel = zeros(nAx(1),nAx(2));
 hPos = cell(nAx(1),nAx(2));
@@ -11,7 +14,7 @@ for iAx = 1:nAx(1)
     end
 end
 
-meanXPos = mean(cellfun(@(x) x(1), hPos));
+meanXPos = mean(cellfun(@(x) x(1), hPos)) + xShift;
 
 for iAx = 1:nAx(1)
     for jAx = 1:nAx(2)

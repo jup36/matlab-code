@@ -4,7 +4,7 @@ tic;
 load('C:\users\lapis\OneDrive\project\workingmemory_interneuron\data\celllist_neuron.mat', 'nspv', 'nssom', 'wssom', 'fs', 'pc');
 load('C:\users\lapis\OneDrive\git\matlab-code\WMIN-project\error_analysis\error_sessions.mat');
 
-stat_test = 1; % 1: Bayesian decoding, 2: LDA
+stat_test = 2; % 1: Bayesian decoding, 2: LDA
 timeWindow = [-1000 4000]; % in ms
 binWindow = 500;
 binStep = 100;
@@ -19,10 +19,13 @@ nT = length(cellNm);
 for iT = 1:nT
     trialSummary = result.(cellNm{iT}).total(:,[1 4 5 8]);
     
-    LRreverse = ~cellfun(@isempty, strfind(cells{iT}, 'PV36')) | ~cellfun(@isempty, strfind(cells{iT}, 'Sst10'));
-    trialSummary(LRreverse, :) = trialSummary(LRreverse, [3 4 1 2]);
-    
     fr = result.(cellNm{iT}).fr;
+%     f_lr = result.(cellNm{iT}).lr;
+%     f_rl = result.(cellNm{iT}).rl;
+    
+%     LRreverse = f_lr < f_rl;
+%     trialSummary(LRreverse, :) = trialSummary(LRreverse, [3 4 1 2]);
+    
     for iL = 1:2
         if iL == 1
             Cs = find(trialSummary(:,1)>=(nTrain+nTest) & trialSummary(:,3)>=nTrain & trialSummary(:,2)>=nTest & fr>=frThres);
@@ -41,11 +44,11 @@ for iT = 1:nT
             [bin, spk] = spikeBin(spikeTime, timeWindow, binWindow, binStep);
             
             for iP = [1:3; iL (3-iL) iL; (3-iL) iL iL]
-                if (~isempty(strfind(T(iT, iL).cellName{iC},'PV36')) || ~isempty(strfind(T(iT, iL).cellName{iC},'Sst10')))
-                    inTrial = trialresult(:, 1)==(3-iP(2)) & trialresult(:,2)==(3-iP(3)) & trialresult(:,4)==0;
-                else
+%                 if LRreverse(Cs(iC))
+%                     inTrial = trialresult(:, 1)==(3-iP(2)) & trialresult(:,2)==(3-iP(3)) & trialresult(:,4)==0;
+%                 else
                     inTrial = trialresult(:, 1)==iP(2) & trialresult(:,2)==iP(3) & trialresult(:,4)==0;
-                end
+%                 end
                 spkData{iC, iP(1)} = spk(inTrial, :);
             end
         end
@@ -127,7 +130,7 @@ T(3, 2).performance.error = pE32;
 T(4, 1).performance.error = pE41;
 T(4, 2).performance.error = pE42;
 
-slide_bayes_fr05 = T;
+slide_lda_fr05_lr = T;
 
-save('error_decoding.mat', 'slide_bayes_fr05', '-append');
+save('error_decoding.mat', 'slide_lda_fr05_lr', '-append');
 toc;
