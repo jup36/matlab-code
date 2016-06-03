@@ -9,7 +9,7 @@ stat_wspv = wvform_load(wspv);
 stat_nssom = wvform_load(nssom);
 stat_wssom = wvform_load(wssom);
 
-save('waveform_correlation.mat', 'stat_nspv', 'stat_wspv', 'stat_nssom', 'stat_wssom');
+save('waveform_correlation_20160526.mat', 'stat_nspv', 'stat_wspv', 'stat_nssom', 'stat_wssom');
 
 function stats = wvform_load(mFile)
 lightwin = [0 20]; % ms
@@ -34,8 +34,13 @@ spdata = LoadSpikes(tFile,'tsflag','ts');
 
 nC = length(mFile);
 r = zeros(nC,1);
-m_spont_wv = zeros(nC, 32);
-m_evoked_wv = zeros(nC, 32);
+[m_spont_wv, m_evoked_wv] = deal(cell(1, 4));
+for iTT = 1:4
+    m_spont_wv{iTT} = zeros(nC, 32);
+    m_evoked_wv{iTT} = zeros(nC, 32);
+end
+
+
 for iC = 1:nC
     % Load waveform of single cluster
     [cellpath,cellname,~] = fileparts(mFile{iC});
@@ -46,6 +51,21 @@ for iC = 1:nC
     [~,wv] = LoadTT_NeuralynxNT(ntFile{iC});
     
     cellwv = wv(spk_idx,:,:);
+    
+    % Get input range
+    nttfile = fopen(ntFile{iC});
+    
+    volts = fgetl(nttfile);
+    while ~strncmp(volts,'-ADBitVolts',11)
+        volts = fgetl(nttfile);
+    end
+    volttemp = strsplit(volts,' ');
+    bitvolt = zeros(1,4);
+    for ich = 1:4
+        bitvolt(ich) = str2num(volttemp{ich+1});
+    end
+    
+    fclose(nttfile);
     
     % Find highest peak channel
     load([cellpath,'\',ttname{1},'_Peak.fd'],'-mat', 'FeatureData');
@@ -73,14 +93,16 @@ for iC = 1:nC
     % Get mean waveform
     spont_wv = cellwv(logical(spont_idx),:,:);
     evoked_wv = cellwv(logical(evoked_idx),:,:);
-    m_spont_wv(iC,:) = squeeze(mean(spont_wv(:,maintt,:)));
-    m_evoked_wv(iC,:) = squeeze(mean(evoked_wv(:,maintt,:)));
     
-    m_spont_wv(iC,:) = m_spont_wv(iC,:) / max(m_spont_wv(iC,:));
-    m_evoked_wv(iC,:) = m_evoked_wv(iC,:) / max(m_evoked_wv(iC,:));
+    for iTT = 1:4
+        m_spont_wv{iTT}(iC,:) = (10^6)*bitvolt(iTT)*squeeze(mean(spont_wv(:,iTT,:)));
+        m_evoked_wv{iTT}(iC,:) = (10^6)*bitvolt(iTT)*squeeze(mean(evoked_wv(:,iTT,:)));
+    end
     
-    rtemp = corrcoef(m_spont_wv(iC,:)',m_evoked_wv(iC,:)');  
+    rtemp = corrcoef(m_spont_wv{maintt}(iC,:)',m_evoked_wv{maintt}(iC,:)');  
     r(iC) = rtemp(1,2);
 end
 
-stats = table(r, m_spont_wv, m_evoked_wv);
+stats = table(r, m_spont_wv{1}, m_spont_wv{2}, m_spont_wv{3}, m_spont_wv{4}, ...
+    m_evoked_wv{1}, m_evoked_wv{2}, m_evoked_wv{3}, m_evoked_wv{4}, ...
+    'VariableNames', {'r', 's1', 's2', 's3', 's4', 'e1', 'e2', 'e3', 'e4'});

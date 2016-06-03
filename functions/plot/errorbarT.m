@@ -62,7 +62,7 @@ if strcmpi(flagtype,'hggroup') % ERRORBAR(...)
 
     set(hh(2),'xdata',x(:))	% Change error bars on the figure
     set(hh(2), 'LineWidth', t);
-%     set(hh(1), 'LineStyle', 'none');
+    set(hh(1), 'LineStyle', 'none');
     
 else  % ERRORBAR('V6',...) %ALAN: seems like these two could be combined...
     

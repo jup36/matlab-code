@@ -32,4 +32,3 @@ for iC = 1:nC
     save(mFileList{iC}, ...
         'spikeTime', 'spikeTimeRw', '-append');
 end
-

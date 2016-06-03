@@ -37,7 +37,7 @@ if isempty(tList)
     [tData, tList] = deal([]);
     return;
 end
-tList = unique(tList);
+% tList = unique(tList);
 tLoad = LoadSpikes(tList,'tsflag','ts','verbose',0);
 
 nT = length(tList);
