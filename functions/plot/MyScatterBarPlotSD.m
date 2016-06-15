@@ -21,12 +21,13 @@ for iGroup = 1:nGroup
     yMean = nansum(yPoint)/nPoint;
     ySem = nanstd(yPoint);
     
-    plot(xPoint,yPoint,'LineStyle','none','Marker','.','MarkerSize',2,'Color',[0.494 0.494 0.494]);
-    
     h(iGroup).bar = bar(iGroup,yMean,'FaceColor',xColor{iGroup},'LineStyle','none','BarWidth',barWidth);
     h(iGroup).errorbar = errorbar(iGroup,yMean,ySem,'LineWidth',2,'Color',xColor{iGroup});
-    errorbarT(h(iGroup).errorbar,0.4,1);
+    errorbarT(h(iGroup).errorbar,0.2,0.5);
+
+        
+    plot(xPoint,yPoint,'LineStyle','none','Marker','.','MarkerSize',6,'Color',xColor{iGroup});
     
 end
-set(gca,'Box','off','TickDir','out','FontSize',5,'LineWidth',0.2,...
+set(gca,'Box','off','TickDir','out','FontSize',4,'LineWidth',0.35,...
     'XLim',[0.5 nGroup+0.5],'XTick',1:nGroup);
