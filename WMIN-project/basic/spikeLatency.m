@@ -2,36 +2,38 @@ function spikeLatency
 % Spike latency and jitter
 
 % Variable nspv, nssom, and wssom will be used.
-load('D:\Cloud\project\workingmemory_interneuron\data\celllist_20150527.mat');
+load('C:\Users\Lapis\OneDrive\project\workingmemory_interneuron\data\celllist_neuron.mat');
 
-s_pv = spkLatency(nspv);
-s_nssom = spkLatency(nssom);
-s_wssom = spkLatency(wssom);
+s_pv = spkLatency(pv)
+s_som = spkLatency(som)
 
-npv = size(s_pv,1);
-nnssom = size(s_nssom,1);
-nwssom = size(s_wssom,1);
+save('spikeLatency.mat', 's_pv', 's_som');
+% s_wssom = spkLatency(wssom);
 
-group = [ones(npv,1);2*ones(nnssom,1);3*ones(nwssom,1)];
-all = [s_pv; s_nssom; s_wssom];
-
-xColor = {[0.494 0.184 0.556], [0.929 0.694 0.125], [0.078 .447 0.188]};
-
-close all;
-fHandle = figure('PaperUnits','centimeters','PaperPosition',[2 2 8.9/2 6.88/2]);
-ha(1) = axes('Position', axpt(2,1,1,1,[0.1 0.2 0.85 0.75]));
-hb1 = MyScatterBarPlot(all.L, group, 0.5, xColor);
-xticklabel_rotate([],45,{'PV', 'ns-SOM', 'ws-SOM'}, 'FontSize',4);
-set(gca, 'YLim', [0 4], 'YTick', 0:4, 'YTickLabel', {0, [], [], [], 4});
-ylabel('Latency (ms)');
-
-ha(2) = axes('Position', axpt(2,1,2,1,[0.1 0.2 0.85 0.75]));
-hb2 = MyScatterBarPlot(all.J, group, 0.5, xColor);
-% set(ha, 'XTickLabel', {'PV', 'ns-SOM', 'ws-SOM'});
-xticklabel_rotate([],45, {'PV', 'ns-SOM', 'ws-SOM'}, 'FontSize',4);
-set(gca, 'YLim', [0 2], 'YTick', 0:0.5:2, 'YTickLabel', {0, [], [], [], 2});
-ylabel('Jitter (ms)');
-print(fHandle, '-dtiff', '-r300', 'spikeLatency.tif');
+% npv = size(s_pv,1);
+% nsom = size(s_som,1);
+% % nwssom = size(s_wssom,1);
+% 
+% group = [ones(npv,1);2*ones(nsom,1)];
+% all = [s_pv; s_nssom; s_wssom];
+% 
+% xColor = {[0.494 0.184 0.556], [0.929 0.694 0.125], [0.078 .447 0.188]};
+% 
+% close all;
+% fHandle = figure('PaperUnits','centimeters','PaperPosition',[2 2 8.9/2 6.88/2]);
+% ha(1) = axes('Position', axpt(2,1,1,1,[0.1 0.2 0.85 0.75]));
+% hb1 = MyScatterBarPlot(all.L, group, 0.5, xColor);
+% xticklabel_rotate([],45,{'PV', 'ns-SOM', 'ws-SOM'}, 'FontSize',4);
+% set(gca, 'YLim', [0 4], 'YTick', 0:4, 'YTickLabel', {0, [], [], [], 4});
+% ylabel('Latency (ms)');
+% 
+% ha(2) = axes('Position', axpt(2,1,2,1,[0.1 0.2 0.85 0.75]));
+% hb2 = MyScatterBarPlot(all.J, group, 0.5, xColor);
+% % set(ha, 'XTickLabel', {'PV', 'ns-SOM', 'ws-SOM'});
+% xticklabel_rotate([],45, {'PV', 'ns-SOM', 'ws-SOM'}, 'FontSize',4);
+% set(gca, 'YLim', [0 2], 'YTick', 0:0.5:2, 'YTickLabel', {0, [], [], [], 2});
+% ylabel('Jitter (ms)');
+% print(fHandle, '-dtiff', '-r300', 'spikeLatency.tif');
 
 function stats = spkLatency(mFile)
 lightwin = 5;

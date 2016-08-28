@@ -1,13 +1,12 @@
 clc; clearvars; close all;
 load('cellTable.mat');
 
-cellNm = {'nspv', 'som', 'nssom', 'wssom', 'fs', 'pc'};
+cellNm = {'fs', 'pc'};
 trialType = [1, 3, 13, 15];
 lineClr = {[0 0.447 0.741], [0.235 0.235 0.235], [0.8 0 0], [1 0.5 0.5]};
 fillClr = {[0 0.447 0.741], [0.494 0.494 0.494], [0.8 0 0], [1 0.5 0.5]};
 
 tag.p = T.pLR < 0.01 & T.pSalt < 0.01;
-
 tag.pv = tag.p & T.mouseLine=='PV';
 tag.nspv = tag.p & T.mouseLine=='PV' & T.class == 1;
 tag.som = tag.p & T.mouseLine=='SOM';
@@ -19,7 +18,7 @@ tag.pc = ~tag.p & T.class == 2;
 fHandle = figure('PaperUnits','centimeters','PaperPosition',[2 2 8.5 6.375*2]);
 gapL = [0.1 0.1];
 
-hA = zeros(1, 3);
+hA = zeros(1, 2);
 for iT = 1:2
     cellList.(cellNm{iT}) = T.cellList(tag.(cellNm{iT}));
     n.(cellNm{iT}) = length(cellList.(cellNm{iT}));
@@ -50,7 +49,7 @@ for iT = 1:2
     end
     ylabel('Normalized firing rate', 'FontSize', 5);
     if iT==1
-        title('PV', 'FontSize', 6, 'Color', [0.494 0.184 0.556]);
+        title('Type I', 'FontSize', 6, 'Color', [0.5 0.5 0.5]);
         axes('Position',[0.80 0.80 0.1 0.1]);
         hold on;
         plot([0 0.25],[0.75 0.75],'LineWidth',0.5,'Color',[0 0.447  0.741]);
@@ -59,7 +58,7 @@ for iT = 1:2
         text(0.3,0.5,'Unrewarded','FontSize',4);
         set(gca,'visible','off', 'YLim', [0 1], 'XLim', [0 1]);
     elseif iT==2
-        title('SOM', 'FontSize', 6, 'Color', [0.466 0.674 0.188]);
+        title('Type II', 'FontSize', 6, 'Color', [0 0 0]);
         xlabel('Time from reward onset (s)', 'FontSize', 5);
     end
 end
@@ -69,4 +68,4 @@ set(hA(1:2), 'TickDir', 'out', 'LineWidth', 0.2, 'FontSize', 4, ...
 set(hA(1), 'XTickLabel', []);
 set(hA(2), 'XTickLabel', {'', '0', '', '2', ''});
 
-print(fHandle, '-dtiff', '-r300', 'reward_in.tif');
+print(fHandle, '-dtiff', '-r300', 'reward_type.tif');
