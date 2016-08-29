@@ -2,7 +2,9 @@ function Event2Mat(sessionFolder,modOff,noLickOut)
 % Event2Mat Converts data from Neuralynx NEV files to Matlab mat files
 
 lickWindow = 1000;
-
+if nargin < 1
+    sessionFolder = {};
+end
 if nargin < 2
     modOff = 0;
 end
@@ -39,6 +41,7 @@ for iFile = 1:nFile
     nTrial = length(trialStartIndex) - 1;
     
     eventTime = NaN(nTrial, 6);
+    modTime = NaN(nTrial, 2);
     cue = NaN(nTrial, 1);
     reward = NaN(nTrial, 1);
     punishment = NaN(nTrial, 1);
@@ -62,7 +65,17 @@ for iFile = 1:nFile
         if length(offsetTemp)~=3; continue; end;
         
         % modulation
-        modulationIndex = strcmp(eventString, 'Red') & inTrial;
+        modOnsetIndex = find(strcmp(eventString, 'Red') & inTrial);
+        if ~isempty(modOnsetIndex)
+            modTime(iTrial, 1) = timeStamp(modOnsetIndex);
+        
+            modOffsetIndex = find((strcmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 3 value (0x0000).') | ...
+                strcmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 3 value (0x0001).')) & inTrial);
+            if ~isempty(modOffsetIndex)
+                modOffsetIndexIndex = find(modOffsetIndex > modOnsetIndex, 1, 'first');
+                modTime(iTrial, 2) = timeStamp(modOffsetIndex(modOffsetIndexIndex));
+            end
+        end
         
         % time variables
         % col1: baseline
@@ -80,7 +93,21 @@ for iFile = 1:nFile
         cue(iTrial) = str2double(eventString{cueIndex}(4));
         reward(iTrial) = any(strcmp(eventString, 'Reward') & inTrial);
         punishment(iTrial) = any(strcmp(eventString, 'Punishment') & inTrial);
-        modulation(iTrial) = any(modulationIndex);
+        % modulation
+        % 1: cue period, 2: reward period, 3: total period, 0: none
+        if isnan(modTime(iTrial, 1))
+            modulation(iTrial) = 0;
+        elseif modTime(iTrial, 1) - eventTime(iTrial,1) <= 500
+            if diff(modTime(iTrial, :)) <= 3000
+                modulation(iTrial) = 1;
+            else
+                modulation(iTrial) = 3;
+            end
+        elseif modTime(iTrial, 1) - eventTime(iTrial,1) >= 1500
+            modulation(iTrial) = 2;
+        else
+            modulation(iTrial) = 9;
+        end
         
         % find first lick after reward presentation time
         if punishYes && cue(iTrial) == 4
@@ -167,7 +194,7 @@ for iFile = 1:nFile
     
     save('Events.mat', ...
         'baseTime', 'taskTime', 'tagTime', 'lickOnsetTime', 'rewardLickTime', ...
-        'eventTime', 'cue', 'reward', 'punishment', 'modulation', ...
+        'eventTime', 'cue', 'reward', 'punishment', 'modulation', 'modTime', ...
         'nTrial', 'nTrialRw', 'errorTrialNum', 'notValidTrialNum', 'maxTrialDuration', 'eventDuration', ...
         'cueIndex', 'cueResult', 'trialIndex', 'trialResult', ...
         'blueOnsetTime', 'redOnsetTime');   
