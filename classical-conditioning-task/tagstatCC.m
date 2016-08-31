@@ -4,9 +4,15 @@ function tagstatCC(sessionFolder)
 % Variables
 dt = 0.2;
 testRangeBlue = 5; % unit: ms
-baseRangeBlue = 400; % baseline
+baseRangeBlue = [-400 0]; % baseline
 testRangeRed = 400;
-baseRangeRed = 4400;
+baseRangeRed = [-4000 0];
+
+testRangeRedOnset = 20;
+baseRangeRedOnset = [-4000 0];
+
+testRangeRedOffset = 20;
+baseRangeRedOffset = [-4500 -520];
 
 % Find files
 if nargin == 0; sessionFolder = {}; end;
@@ -20,11 +26,13 @@ for iCell = 1:nCell
     cd(cellPath);
     
     clear blueOnsetTime redOnsetTime
-    load('Events.mat','blueOnsetTime','redOnsetTime');
+    load('Events.mat','blueOnsetTime','redOnsetTime', 'redOffsetTime');
     spikeData = tData{iCell};
     
     [timeBlue, censorBlue] = tagDataLoad(spikeData, blueOnsetTime, testRangeBlue, baseRangeBlue);
     [timeRed, censorRed] = tagDataLoad(spikeData, redOnsetTime, testRangeRed, baseRangeRed);
+    [timeRedOnset, censorRedOnset] = tagDataLoad(spikeData, redOnsetTime, testRangeRedOnset, baseRangeRedOnset);
+    [timeRedOffset, censorRedOffset] = tagDataLoad(spikeData, redOffsetTime, testRangeRedOffset, baseRangeRedOffset);
     
     [p_tagBlue,time_tagBlue,H1_tagBlue,H2_tagBlue] = logRankTest(timeBlue, censorBlue);
     save([cellName,'.mat'],...
@@ -40,6 +48,21 @@ for iCell = 1:nCell
     save([cellName,'.mat'],...
         'p_tagRed','time_tagRed','H1_tagRed','H2_tagRed',...
         '-append');
+    
+    [p_tagRedOnset,time_tagRedOnset,H1_tagRedOnset,H2_tagRedOnset] = logRankTest(timeRedOnset, censorRedOnset);
+    save([cellName,'.mat'],...
+        'p_tagRedOnset','time_tagRedOnset','H1_tagRedOnset','H2_tagRedOnset',...
+        '-append');
+    
+    [p_saltRedOnset, l_saltRedOnset] = saltTest(timeRedOnset, testRangeRedOnset, dt);
+    save([cellName,'.mat'],...
+        'p_saltRedOnset','l_saltRedOnset',...
+        '-append');
+    
+    [p_tagRedOffset,time_tagRedOffset,H1_tagRedOffset,H2_tagRedOffset] = logRankTest(timeRedOffset, censorRedOffset);
+    save([cellName,'.mat'],...
+        'p_tagRedOffset','time_tagRedOffset','H1_tagRedOffset','H2_tagRedOffset',...
+        '-append');
 end
 disp('### Tag stat test done!');
 
@@ -48,7 +71,7 @@ function [time, censor] = tagDataLoad(spikeData, onsetTime, testRange, baseRange
 %   spikeData: raw data from MClust t file (in msec)
 %   onsetTime: time of light stimulation (in msec)
 %   testRange: binning time range for test (in msec)
-%   baseRange: binning time range for baseline (in msec)
+%   baseRange: binning time range for baseline --> [startTime endTime] (in msec)
 %
 %   time: nBin (nBin-1 number of baselines and 1 test) x nLightTrial
 %
@@ -56,14 +79,14 @@ narginchk(4,4);
 if isempty(onsetTime); time = []; censor = []; return; end;
 
 % If onsetTime interval is shorter than test+baseline range, omit.
-outBin = find(diff(onsetTime)<=(testRange+baseRange));
+outBin = find(diff(onsetTime)<=(testRange-baseRange(1)));
 outBin = [outBin;outBin+1];
 onsetTime(outBin(:))=[];
 if isempty(onsetTime); time = []; censor = []; return; end;
 nLight = length(onsetTime);
 
 % Rearrange data
-bin = [-floor(baseRange/testRange)*testRange:testRange:0];
+bin = [ceil(baseRange(1)/testRange)*testRange:testRange:floor(baseRange(2)/testRange)];
 nBin = length(bin);
 
 binMat = ones(nLight,nBin)*diag(bin);
