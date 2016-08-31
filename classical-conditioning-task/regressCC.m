@@ -1,6 +1,7 @@
 function regressCC(cellFolder, binWindow, binStep)
 %regressCC calculates coefficients for each behavioral variables
-% warning off;
+warning off;
+tic;
 rtdir = pwd;
 
 % variables
@@ -37,64 +38,88 @@ for iF = 1:nF
     nTrial = sum(inRegress);
     mods = unique(modulation);
     nMod = length(mods);
-    modulationF = zeros(nTrial, nMod-1);
-    cueF = zeros(nTrial, nMod);
-    rewardF = zeros(nTrial, nMod);
-    punishmentF = zeros(nTrial, nMod);
+    m = zeros(nTrial, nMod-1);
+    [c, r, p] = deal(zeros(nTrial, nMod));
     for iMod = 1:nMod
-        cueF(modulation(inRegress)==mods(iMod) & cue(inRegress)==4, iMod) = 1;
-        cueF(modulation(inRegress)==mods(iMod) & cue(inRegress)==1, iMod) = -1;
-        rewardF(modulation(inRegress)==mods(iMod) & cue(inRegress)==1 & reward(inRegress)==1, iMod) = 1;
-        rewardF(modulation(inRegress)==mods(iMod) & cue(inRegress)==1 & reward(inRegress)==0, iMod) = -1;
-        punishmentF(modulation(inRegress)==mods(iMod) & cue(inRegress)==4 & punishment(inRegress)==1, iMod) = 1;
-        punishmentF(modulation(inRegress)==mods(iMod) & cue(inRegress)==4 & punishment(inRegress)==0, iMod) = -1;
+        c(modulation(inRegress)==mods(iMod) & cue(inRegress)==4, iMod) = 1;
+        c(modulation(inRegress)==mods(iMod) & cue(inRegress)==1, iMod) = -1;
+        r(modulation(inRegress)==mods(iMod) & cue(inRegress)==1 & reward(inRegress)==1, iMod) = 1;
+        r(modulation(inRegress)==mods(iMod) & cue(inRegress)==1 & reward(inRegress)==0, iMod) = -1;
+        p(modulation(inRegress)==mods(iMod) & cue(inRegress)==4 & punishment(inRegress)==1, iMod) = 1;
+        p(modulation(inRegress)==mods(iMod) & cue(inRegress)==4 & punishment(inRegress)==0, iMod) = -1;
         
         for jMod = 1:min([iMod nMod-1])
             if iMod == jMod
-                modulationF(modulation(inRegress)==mods(iMod), jMod) = -(nMod-jMod);
+                m(modulation(inRegress)==mods(iMod), jMod) = -(nMod-jMod);
             else
-                modulationF(modulation(inRegress)==mods(iMod), jMod) = 1;
+                m(modulation(inRegress)==mods(iMod), jMod) = 1;
             end
         end
     end
     
+    cm = c(:, 2:end) + repmat(c(:, 1), 1, nMod-1);
+    rm = r(:, 2:end) + repmat(r(:, 1), 1, nMod-1);
+    pm = p(:, 2:end) + repmat(p(:, 1), 1, nMod-1);
+    
     inRw = ~isnan(rewardLickTime);
     inRw = inRw(inRegress);
     
-    predictor = [modulationF, cueF, rewardF, punishmentF];
+    predictor = [m, c, r, p, cm, rm, pm];
     
-    reg_crm = slideReg(reg_time, reg_spk, predictor);
-    regRw_crm = slideReg(regRw_time, regRw_spk(inRw, :), predictor(inRw, :));
+    reg_crm = slideReg(reg_time, reg_spk, predictor, nMod);
+    regRw_crm = slideReg(regRw_time, regRw_spk(inRw, :), predictor(inRw, :), nMod);
     save(mList{iF}, 'reg_crm', 'regRw_crm', '-append');
 end
 disp('### Regression analysis done!');
+toc;
 end
     
-function reg = slideReg(time, spk, predictor)
+function reg = slideReg(time, y, X, nMod)
 nBin = size(time,2);
-nVar = size(predictor,2);
+nVar = 4*nMod-1;
 
-% predStd = std(predictor) ./ repmat(std(spk,0,1), 1, nVar);
-
-p = zeros(nVar,nBin);
-src = zeros(nVar,nBin);
-sse = zeros(nVar,nBin);
-for iBin = 1:nBin
-    mdl = fitglm(predictor, spk(:,iBin), ...
-        'Distribution', 'normal');
-    
-%     src(:,iBin) = beta(2:end) .* predStd(:,iBin);
-%     sse(:,iBin) = stats.se(2:end) .* predStd(:,iBin);
-%     p(:,iBin) = stats.p(2:end);
+% predictor
+%   m: nMod-1, c: nMod, r: nMod, p: nMod
+%   cm: nMod-1, rm: nMod-1, pm: nMod-1
+varNum = [nMod-1, nMod, nMod, nMod, nMod-1, nMod-1, nMod-1];
+varCum = [0 cumsum(varNum)];
+varIndex = cell(nMod-1, 3);
+for iMod = 1:nMod-1
+    for iType = 1:3
+        varIndex{iMod, iType} = 1:nMod-1;
+        for jType = 1:3
+            if iType~=jType
+                varIndex{iMod, iType} = [varIndex{iMod, iType} varCum(jType+1)+[1 iMod+1]];
+            else
+                varIndex{iMod, iType} = [varIndex{iMod, iType} varCum(jType+4)+1];
+            end
+        end
+    end
 end
 
-outRange = (abs(src+1.96*sse) > 10);
-src(outRange) = 0;
-sse(outRange) = 0;
-p(outRange) = 1;
+[p, beta, ciDown, ciUp, pMod] = deal(zeros(nVar+1, nBin));
+pMod = zeros(3, nMod-1, nBin);
+for iBin = 1:nBin
+    mdl = fitglm(X(:, 1:nVar), y(:, iBin), ...
+        'Distribution', 'poisson');
 
-timesse = [time flip(time)];
-sse = [src-1.96*sse flip(src+1.96*sse,2)];
+    beta(:, iBin) = mdl.Coefficients.Estimate;
+    p(:, iBin) = mdl.Coefficients.pValue;
+    ciTemp = coefCI(mdl);
+    ciDown(:, iBin) = ciTemp(:, 1);
+    ciUp(:, iBin) = ciTemp(:, 2);
+    
+    for iMod = 1:(nMod-1)
+        for iType = 1:3 % cue / reward / punishment
+            mdlReduced = fitglm(X(:, varIndex{iMod, iType}), y(:, iBin), ...
+                'Distribution', 'poisson');
 
-reg = struct('time',time, 'p',p, 'src',src, 'timesse',timesse, 'sse',sse, 'stats', stats);
+            pMod(iType, iMod, iBin) = 1 - chi2cdf(mdlReduced.Deviance - mdl.Deviance, 1);
+        end
+    end
+end
+timeci = [time flip(time)];
+ci = [ciDown flip(ciUp,2)];
+
+reg = struct('time',time, 'p',p, 'beta', beta, 'timeci',timeci, 'ci',ci, 'pMod', pMod);
 end

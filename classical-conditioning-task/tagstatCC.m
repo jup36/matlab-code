@@ -5,13 +5,13 @@ function tagstatCC(sessionFolder)
 dt = 0.2;
 testRangeBlue = 5; % unit: ms
 baseRangeBlue = [-400 0]; % baseline
-testRangeRed = 400;
+testRangeRed = 500;
 baseRangeRed = [-4000 0];
 
-testRangeRedOnset = 20;
+testRangeRedOnset = 100;
 baseRangeRedOnset = [-4000 0];
 
-testRangeRedOffset = 20;
+testRangeRedOffset = 100;
 baseRangeRedOffset = [-4500 -520];
 
 % Find files
@@ -48,25 +48,53 @@ for iCell = 1:nCell
     save([cellName,'.mat'],...
         'p_tagRed','time_tagRed','H1_tagRed','H2_tagRed',...
         '-append');
-    
     [p_tagRedOnset,time_tagRedOnset,H1_tagRedOnset,H2_tagRedOnset] = logRankTest(timeRedOnset, censorRedOnset);
     save([cellName,'.mat'],...
         'p_tagRedOnset','time_tagRedOnset','H1_tagRedOnset','H2_tagRedOnset',...
         '-append');
-    
-    [p_saltRedOnset, l_saltRedOnset] = saltTest(timeRedOnset, testRangeRedOnset, dt);
-    save([cellName,'.mat'],...
-        'p_saltRedOnset','l_saltRedOnset',...
-        '-append');
-    
     [p_tagRedOffset,time_tagRedOffset,H1_tagRedOffset,H2_tagRedOffset] = logRankTest(timeRedOffset, censorRedOffset);
     save([cellName,'.mat'],...
         'p_tagRedOffset','time_tagRedOffset','H1_tagRedOffset','H2_tagRedOffset',...
         '-append');
+    
+    cumSpikeBlue = cumSpike(spikeData, blueOnsetTime, 80, [-400 0]);
+    cumSpikeRed = cumSpike(spikeData, redOnsetTime, 800, [-4000 0]);
+    save([cellName,'.mat'],...
+        'cumSpikeBlue', 'cumSpikeRed',...
+        '-append');
 end
 disp('### Tag stat test done!');
 
-function [time, censor] = tagDataLoad(spikeData, onsetTime, testRange, baseRange)
+function cumSpike = cumSpike(spikeData, onsetTime, testRange, baseRange)
+narginchk(4,4);
+if isempty(onsetTime); cumSpike = []; return; end;
+
+% If onsetTime interval is shorter than test+baseline range, omit.
+outBin = find(diff(onsetTime)<=(testRange-baseRange(1)));
+outBin = [outBin;outBin+1];
+onsetTime(outBin(:))=[];
+if isempty(onsetTime); time = []; censor = []; return; end;
+nLight = length(onsetTime);
+
+% Rearrange data
+bin = [ceil(baseRange(1)/testRange)*testRange:testRange:floor(baseRange(2)/testRange)];
+nBin = length(bin);
+
+binMat = ones(nLight,nBin)*diag(bin);
+lightBin = (repmat(onsetTime',nBin,1)+binMat');
+
+% get cumulative curve
+spikeTime = spikeWin(spikeData, lightBin, [0 testRange]);
+baseSpike = spikeTime(1:end-1, :);
+base = sort(cell2mat(baseSpike(:)));
+nBaseX = length(base);
+base = [base, (1:nBaseX)'/nLight/(nBin-1)];
+test = sort(cell2mat(spikeTime(end, :)'));
+nTestX = length(test);
+test = [test, (1:nTestX)'/nLight];
+cumSpike = struct('base', base, 'test', test);
+
+function [time, censor, cumSpike] = tagDataLoad(spikeData, onsetTime, testRange, baseRange)
 %tagDataLoad makes dataset for statistical tests
 %   spikeData: raw data from MClust t file (in msec)
 %   onsetTime: time of light stimulation (in msec)
