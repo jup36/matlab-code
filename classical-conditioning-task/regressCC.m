@@ -1,6 +1,6 @@
 function regressCC(cellFolder, binWindow, binStep)
 %regressCC calculates coefficients for each behavioral variables
-warning off;
+% warning off;
 rtdir = pwd;
 
 % variables
@@ -34,32 +34,38 @@ for iF = 1:nF
     reg_spk = reg_spk(inRegress,:);
     regRw_spk = regRw_spk(inRegress,:);
     
-    value = cue(inRegress);
-    value(value~=1) = 0;
-    modulation = modulation(inRegress);
-    nomod = (modulation==0);
-    mod = (modulation==1);
+    nTrial = sum(inRegress);
+    mods = unique(modulation);
+    nMod = length(mods);
+    modulationF = zeros(nTrial, nMod-1);
+    cueF = zeros(nTrial, nMod);
+    rewardF = zeros(nTrial, nMod);
+    punishmentF = zeros(nTrial, nMod);
+    for iMod = 1:nMod
+        cueF(modulation(inRegress)==mods(iMod) & cue(inRegress)==4, iMod) = 1;
+        cueF(modulation(inRegress)==mods(iMod) & cue(inRegress)==1, iMod) = -1;
+        rewardF(modulation(inRegress)==mods(iMod) & cue(inRegress)==1 & reward(inRegress)==1, iMod) = 1;
+        rewardF(modulation(inRegress)==mods(iMod) & cue(inRegress)==1 & reward(inRegress)==0, iMod) = -1;
+        punishmentF(modulation(inRegress)==mods(iMod) & cue(inRegress)==4 & punishment(inRegress)==1, iMod) = 1;
+        punishmentF(modulation(inRegress)==mods(iMod) & cue(inRegress)==4 & punishment(inRegress)==0, iMod) = -1;
+        
+        for jMod = 1:min([iMod nMod-1])
+            if iMod == jMod
+                modulationF(modulation(inRegress)==mods(iMod), jMod) = -(nMod-jMod);
+            else
+                modulationF(modulation(inRegress)==mods(iMod), jMod) = 1;
+            end
+        end
+    end
+    
     inRw = ~isnan(rewardLickTime);
     inRw = inRw(inRegress);
-    reward = reward(inRegress);
-    punishment = punishment(inRegress);
     
-    % regression (cue, reward | modulation==0)
-    if any(nomod)
-        reg_cr_nomod = slideReg(reg_time, reg_spk(nomod,:), [value(nomod) reward(nomod) punishment(nomod)]);
-        regRw_cr_nomod = slideReg(regRw_time, regRw_spk(nomod & inRw,:), [value(nomod & inRw) reward(nomod & inRw) punishment(nomod & inRw)]);
-        save(mList{iF}, 'reg_cr_nomod', 'regRw_cr_nomod', '-append');
-    end
+    predictor = [modulationF, cueF, rewardF, punishmentF];
     
-    % regression (cue, reward | modulation==1)
-    % regression (cue, reward, modulation)
-    if any(mod)
-        reg_cr_mod = slideReg(reg_time, reg_spk(mod,:), [value(mod) reward(mod) punishment(mod)]);
-        reg_crm = slideReg(reg_time, reg_spk, [value reward punishment modulation value.*modulation reward.*modulation punishment.*modulation]);
-        regRw_cr_mod = slideReg(regRw_time, regRw_spk(mod & inRw,:), [value(mod & inRw) reward(mod & inRw) punishment(mod & inRw)]);
-        regRw_crm = slideReg(regRw_time, regRw_spk(inRw,:), [value(inRw) reward(inRw) punishment(inRw) modulation(inRw) value(inRw).*modulation(inRw) reward(inRw).*modulation(inRw) punishment(inRw).*modulation(inRw)]);
-        save(mList{iF}, 'reg_cr_mod', 'reg_crm', 'regRw_cr_mod', 'regRw_crm', '-append');
-    end
+    reg_crm = slideReg(reg_time, reg_spk, predictor);
+    regRw_crm = slideReg(regRw_time, regRw_spk(inRw, :), predictor(inRw, :));
+    save(mList{iF}, 'reg_crm', 'regRw_crm', '-append');
 end
 disp('### Regression analysis done!');
 end
@@ -68,21 +74,18 @@ function reg = slideReg(time, spk, predictor)
 nBin = size(time,2);
 nVar = size(predictor,2);
 
+% predStd = std(predictor) ./ repmat(std(spk,0,1), 1, nVar);
+
 p = zeros(nVar,nBin);
 src = zeros(nVar,nBin);
 sse = zeros(nVar,nBin);
-
-predStd = zeros(nVar,nBin);
-for iVar = 1:nVar
-    predStd(iVar,:) = std(predictor(:,iVar)) ./ std(spk,0,1);
-end
-
 for iBin = 1:nBin
-    [beta,~,stats] = glmfit(predictor, spk(:,iBin));
+    mdl = fitglm(predictor, spk(:,iBin), ...
+        'Distribution', 'normal');
     
-    src(:,iBin) = beta(2:end) .* predStd(:,iBin);
-    sse(:,iBin) = stats.se(2:end) .* predStd(:,iBin);
-    p(:,iBin) = stats.p(2:end);
+%     src(:,iBin) = beta(2:end) .* predStd(:,iBin);
+%     sse(:,iBin) = stats.se(2:end) .* predStd(:,iBin);
+%     p(:,iBin) = stats.p(2:end);
 end
 
 outRange = (abs(src+1.96*sse) > 10);
@@ -93,5 +96,5 @@ p(outRange) = 1;
 timesse = [time flip(time)];
 sse = [src-1.96*sse flip(src+1.96*sse,2)];
 
-reg = struct('time',time, 'p',p, 'src',src, 'timesse',timesse, 'sse',sse);
+reg = struct('time',time, 'p',p, 'src',src, 'timesse',timesse, 'sse',sse, 'stats', stats);
 end

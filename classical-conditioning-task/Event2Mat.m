@@ -2,17 +2,16 @@ function Event2Mat(sessionFolder,modOff,noLickOut)
 % Event2Mat Converts data from Neuralynx NEV files to Matlab mat files
 
 lickWindow = 1000;
-if nargin < 1
-    sessionFolder = {};
-end
-if nargin < 2
-    modOff = 0;
-end
-if nargin < 3
-    noLickOut = 0;
-end
 
+if nargin <= 2
+    noLickOut = 0;
+    if nargin <= 1
+        modOff = 0;
+        if nargin == 0; sessionFolder = {}; end;
+    end
+end
 [eData, eList] = eLoad(sessionFolder);
+if isempty(eList); return; end;
 
 nFile = length(eList);
 for iFile = 1:nFile
@@ -59,7 +58,7 @@ for iFile = 1:nFile
         % reward
         rewardIndex = (strcmp(eventString, 'Reward') | strcmp(eventString, 'Non-reward') | strcmp(eventString, 'Punishment')) & inTrial;
         if ~any(rewardIndex); continue; end;
-
+        
         % TTL off (1. cue onset, 2. delay onset, 3. reward offset)
         offsetTemp = find(strncmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 2', 40) & inTrial);
         if length(offsetTemp)~=3; continue; end;
@@ -68,7 +67,7 @@ for iFile = 1:nFile
         modOnsetIndex = find(strcmp(eventString, 'Red') & inTrial);
         if ~isempty(modOnsetIndex)
             modTime(iTrial, 1) = timeStamp(modOnsetIndex);
-        
+            
             modOffsetIndex = find((strcmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 3 value (0x0000).') | ...
                 strcmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 3 value (0x0001).')) & inTrial);
             if ~isempty(modOffsetIndex)
@@ -149,7 +148,7 @@ for iFile = 1:nFile
         if isempty(notValidUntil); continue; end;
         notValidTrial(jTrial:(notValidUntil+1)) = true;
     end
-
+    
     notValidTrialNum = sum(notValidTrial);
     
     eventTime(notValidTrial,:) = [];
@@ -162,22 +161,23 @@ for iFile = 1:nFile
     if modOff==1
         modulation(modulation==1)=0;
     end
-       
+    
     nTrial = size(eventTime,1);
     nTrialRw = sum(~isnan(rewardLickTime));
     trialDuration = eventTime(:,6) - eventTime(:,1);
     maxTrialDuration = round(max(trialDuration)/1000);
     
     eventDuration = round(mean(eventTime - repmat(eventTime(:,2),1,6))/500)/2;
-
+    
     % trial summary
-    cueIndex = false(nTrial,8); % [CueA&noMod CueA&Mod ...]
-    trialIndex = false(nTrial,16);% [CueA&noMod&Reward CueA&Mod&Reward CueA&noMod&noReward CueA&Mod&noReward ...]
+    nMod = length(unique(modulation));
+    cueIndex = false(nTrial,4*nMod); % [CueA&noMod CueA&ModA CueA&ModB ...]
+    trialIndex = false(nTrial,4*2*nMod);% [CueA&noMod&Reward CueA&ModA&Reward CueA&ModB&Reward CueA&noMod&noReward CueA&Mod&noReward ...]
     for iCue = 1:4
-        for iModulation = 1:2
-            cueIndex(:,(iCue-1)*2 + iModulation) = (cue==iCue) & (modulation==(iModulation-1));
+        for iModulation = 1:nMod
+            cueIndex(:,(iCue-1)*nMod + iModulation) = (cue==iCue) & (modulation==(iModulation-1));
             for iReward = 1:2
-                iCol = (iCue-1)*4 + (iReward-1)*2 + iModulation;
+                iCol = (iCue-1)*2*nMod + (iReward-1)*nMod + iModulation;
                 trialIndex(:,iCol) = (cue==iCue) & ((reward+punishment)==(2-iReward)) & (modulation==(iModulation-1));
             end
         end
@@ -187,16 +187,21 @@ for iFile = 1:nFile
     
     % tagging
     tagIndex = timeStamp > taskTime(2);
+    
     blueOnsetIndex = strcmp(eventString, 'Blue') & tagIndex;
-    redOnsetIndex = strcmp(eventString, 'Red') & tagIndex;
     blueOnsetTime = timeStamp(blueOnsetIndex);
+    
+    redOnsetIndex = strcmp(eventString, 'Red') & tagIndex;
     redOnsetTime = timeStamp(redOnsetIndex);
+    
+    redOffsetIndex = strcmp(eventString, 'TTL Input on AcqSystem1_0 board 0 port 1 value (0x0000).') & tagIndex;
+    redOffsetTime = timeStamp(redOffsetIndex);
     
     save('Events.mat', ...
         'baseTime', 'taskTime', 'tagTime', 'lickOnsetTime', 'rewardLickTime', ...
         'eventTime', 'cue', 'reward', 'punishment', 'modulation', 'modTime', ...
         'nTrial', 'nTrialRw', 'errorTrialNum', 'notValidTrialNum', 'maxTrialDuration', 'eventDuration', ...
         'cueIndex', 'cueResult', 'trialIndex', 'trialResult', ...
-        'blueOnsetTime', 'redOnsetTime');   
+        'blueOnsetTime', 'redOnsetTime', 'redOffsetTime');
 end
 disp('Done!');
