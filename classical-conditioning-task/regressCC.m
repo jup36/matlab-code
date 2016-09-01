@@ -15,6 +15,8 @@ elseif nargin==2
     binStep = binWindow;
 end
 
+poisson = 0;
+
 % load files
 mList = mLoad(cellFolder);
 if isempty(mList); return; end;
@@ -66,15 +68,16 @@ for iF = 1:nF
     
     predictor = [m, c, r, p, cm, rm, pm];
     
-    reg_crm = slideReg(reg_time, reg_spk, predictor, nMod);
-    regRw_crm = slideReg(regRw_time, regRw_spk(inRw, :), predictor(inRw, :), nMod);
+    reg_crm = slideReg(reg_time, reg_spk, predictor, nMod, poisson);
+    regRw_crm = slideReg(regRw_time, regRw_spk(inRw, :), predictor(inRw, :), nMod, poisson);
     save(mList{iF}, 'reg_crm', 'regRw_crm', '-append');
 end
 disp('### Regression analysis done!');
 toc;
 end
     
-function reg = slideReg(time, y, X, nMod)
+function reg = slideReg(time, y, X, nMod, poisson)
+% poission: 0 - normal / 1 - poisson
 nBin = size(time,2);
 nVar = 4*nMod-1;
 
@@ -100,8 +103,13 @@ end
 [p, beta, ciDown, ciUp, pMod] = deal(zeros(nVar+1, nBin));
 pMod = zeros(3, nMod-1, nBin);
 for iBin = 1:nBin
-    mdl = fitglm(X(:, 1:nVar), y(:, iBin), ...
-        'Distribution', 'poisson');
+    if poisson==1
+        mdl = fitglm(X(:, 1:nVar), y(:, iBin), ...
+            'Distribution', 'poisson');
+    elseif poisson==0
+        mdl = fitglm(X(:, 1:nVar), y(:, iBin), ...
+            'Distribution', 'normal');
+    end
 
     beta(:, iBin) = mdl.Coefficients.Estimate;
     p(:, iBin) = mdl.Coefficients.pValue;
@@ -111,10 +119,15 @@ for iBin = 1:nBin
     
     for iMod = 1:(nMod-1)
         for iType = 1:3 % cue / reward / punishment
-            mdlReduced = fitglm(X(:, varIndex{iMod, iType}), y(:, iBin), ...
-                'Distribution', 'poisson');
-
-            pMod(iType, iMod, iBin) = 1 - chi2cdf(mdlReduced.Deviance - mdl.Deviance, 1);
+            if poisson==1
+                mdlReduced = fitglm(X(:, varIndex{iMod, iType}), y(:, iBin), ...
+                    'Distribution', 'poisson');
+                pMod(iType, iMod, iBin) = 1 - chi2cdf(mdlReduced.Deviance - mdl.Deviance, 1);
+            elseif poisson==0
+                mdlReduced = fitglm(X(:, varIndex{iMod, iType}), y(:, iBin), ...
+                    'Distribution', 'normal');
+                pMod(iType, iMod, iBin) = 1 - fcdf((mdlReduced.SSE - mdl.SSE)/(mdl.SSE / mdl.DFE), 1, mdl.DFE);
+            end
         end
     end
 end

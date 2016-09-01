@@ -8,11 +8,11 @@ baseRangeBlue = [-400 0]; % baseline
 testRangeRed = 500;
 baseRangeRed = [-4000 0];
 
-testRangeRedOnset = 100;
+testRangeRedOnset = 200;
 baseRangeRedOnset = [-4000 0];
 
-testRangeRedOffset = 100;
-baseRangeRedOffset = [-4500 -520];
+testRangeRedOffset = 200;
+baseRangeRedOffset = [-4400 -600];
 
 % Find files
 if nargin == 0; sessionFolder = {}; end;
@@ -58,7 +58,7 @@ for iCell = 1:nCell
         '-append');
     
     cumSpikeBlue = cumSpike(spikeData, blueOnsetTime, 80, [-400 0]);
-    cumSpikeRed = cumSpike(spikeData, redOnsetTime, 800, [-4000 0]);
+    cumSpikeRed = cumSpike(spikeData, redOnsetTime, 1000, [-4000 0]);
     save([cellName,'.mat'],...
         'cumSpikeBlue', 'cumSpikeRed',...
         '-append');
