@@ -415,7 +415,7 @@ for iFile = 1:nFile
                     'MarkerFaceColor', colorDarkGray, 'Color', colorDarkGray);
             end
             
-            selectPlot = 2*nMod*(cues(iCue)-1)+(1:(2*nMod))
+            selectPlot = 2*nMod*(cues(iCue)-1)+(1:(2*nMod));
             for jType = selectPlot(repmat((1:nMod)==1 | (1:nMod)==(iMod+1), 1, 2))
                 if trialResult(jType)~=0
                     fill([psthtimeRw flip(psthtimeRw)], psthsemRw(jType, :), lineClr{ceil(jType/nMod), mod(jType-1, nMod)+1}, ...
@@ -427,7 +427,7 @@ for iFile = 1:nFile
                 end
             end
             set(hRw((iCue-1)*(nMod-1)+iMod+1), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
-            title(['Rw x Mod = ', num2str(iMod+1), ' | Cue=',cueName{iCue}], 'FontSize', fontM);
+            title(['Rw x Mod = ', num2str(iMod), ' | Cue=',cueName{iCue}], 'FontSize', fontM);
             ylabel('Rate (Hz)', 'FontSize', fontS);
 %             if iCue==nCue & iMod==nMod-1
 %                 xlabel('Time from reward onset (s)', 'FontSize', fontS);
