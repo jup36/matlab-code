@@ -50,11 +50,17 @@ for iF = 1:nF
         p(modulation(inRegress)==mods(iMod) & cue(inRegress)==4 & punishment(inRegress)==1, iMod) = 1;
         p(modulation(inRegress)==mods(iMod) & cue(inRegress)==4 & punishment(inRegress)==0, iMod) = -1;
         
-        for jMod = max([iMod-1 1]):(nMod-1)
-            if jMod == iMod - 1
-                m(modulation(inRegress)==mods(iMod), jMod) = jMod;
-            else
+        if iMod==1
+            for jMod = 1:(nMod-1)
                 m(modulation(inRegress)==mods(iMod), jMod) = -1;
+            end
+        else
+            for jMod = 1:(iMod-1)
+                if jMod == iMod - 1
+                    m(modulation(inRegress)==mods(iMod), jMod) = nMod-jMod;
+                else
+                    m(modulation(inRegress)==mods(iMod), jMod) = -1;
+                end
             end
         end
     end
