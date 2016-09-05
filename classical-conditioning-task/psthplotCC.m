@@ -68,7 +68,7 @@ for iFile = 1:nFile
     cd(cellDir);
     load(mList{iFile});
     load('Events.mat');
-        
+    
     if nMod==1
         lineClr = lineClrNoMod;
         lineStl = lineStlNoMod;
@@ -117,7 +117,7 @@ for iFile = 1:nFile
     if ~isempty(blueOnsetTime) && ~isempty(xptTagBlue{1})
         nBlue = length(blueOnsetTime);
         winBlue = [min(psthtimeTagBlue) max(psthtimeTagBlue)];
-                
+        
         % Blue tag raster
         hTagBlue(1) = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,3:4,[],wideInterval),tightInterval));
         plot(xptTagBlue{1}, yptTagBlue{1}, ...
@@ -136,7 +136,7 @@ for iFile = 1:nFile
         set(hBarBlue, 'FaceColor','k', 'EdgeAlpha',0);
         set(hTagBlue(2), 'XLim', winBlue, 'XTick', [winBlue(1) 0 winBlue(2)], ...
             'YLim', [0 yLimBarBlue], 'YTick', [0 yLimBarBlue], 'YTickLabel', {[], yLimBarBlue});
-%         xlabel('Time (ms)', 'FontSize', fontS);
+        %         xlabel('Time (ms)', 'FontSize', fontS);
         ylabel('Rate (Hz)', 'FontSize', fontS);
         
         % Blue tag hazard function
@@ -150,7 +150,7 @@ for iFile = 1:nFile
         text(winHBlue(2)*0.1,yLimH*1.0,['p = ',num2str(p_saltBlue,2),' (SALT)'], 'FontSize',fontS, 'Interpreter','none');
         set(hTagBlue(3), 'XLim', winHBlue, 'XTick', winHBlue, ...
             'YLim', [0 yLimH], 'YTick', [0 yLimH], 'YTickLabel', {[], yLimH});
-%         xlabel('Time (ms)', 'FontSize', fontS);
+        %         xlabel('Time (ms)', 'FontSize', fontS);
         ylabel('H(t)', 'FontSize', fontS);
         
         % Blue tag cumulative curve
@@ -164,16 +164,16 @@ for iFile = 1:nFile
             'YLim', [0 yLimCum], 'YTick', [0 yLimCum], 'YTickLabel', {[], yLimCum});
         xlabe('Time (ms)', 'FontSize', fontS);
         ylabel('Cumulative spikes', 'FontSize', fontS);
-       
+        
         set(hTagBlue, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS);
         align_ylabel(hTagBlue)
     end
-
+    
     % Red tag (here, I assumed blue and reg tagging are not done together)
     if ~isempty(redOnsetTime) && ~isempty(xptTagRed{1})
         nRed = length(redOnsetTime);
         winRed = [min(psthtimeTagRed) max(psthtimeTagRed)];
-                
+        
         % Red tag raster
         hTagRed(1) = axes('Position',axpt(1,2,1,1,axpt(nCol,nRowSub,1,3:4,[],wideInterval),tightInterval));
         plot(xptTagRed{1}, yptTagRed{1}, ...
@@ -245,12 +245,12 @@ for iFile = 1:nFile
         title('Tag offset', 'FontSize', fontS);
         xlabel('Time (ms)', 'FontSize', fontS);
         ylabel('H(t)', 'FontSize', fontS);
-                
+        
         set(hTagRed, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS);
         align_ylabel(hTagRed)
     end
-
-
+    
+    
     %% Cue aligned
     % Raster
     hMain(1) = axes('Position',axpt(nCol,nRowMain,2:3,1:2,[],wideInterval));
@@ -267,7 +267,7 @@ for iFile = 1:nFile
     ylabel('Trial', 'FontSize', fontS);
     
     % Psth 1 (Cue x Rw | Mod=0)
-    hMain(2) = axes('Position',axpt(1,3,1,1,axpt(nCol,nRowMain,2:3,[3 7],[],wideInterval),wideInterval));
+    hMain(2) = axes('Position',axpt(1,4,1,1,axpt(nCol,nRowMain,2:3,[3 7],[],wideInterval),wideInterval));
     hold on;
     ylimpsth = ceil(max(psthconv(:))*1.1+0.0001);
     for iDur = 2:4
@@ -281,13 +281,13 @@ for iFile = 1:nFile
     for iP = 1:3
         p_crm{iP} = double(reg_crm.p < pthreshold(iP) & reg_crm.p >= pthreshold(iP+1)); p_crm{iP}(p_crm{iP}==0) = NaN;
         plot(reg_crm.time/1000, p_crm{iP}(varPosition(3)+1,:)*ylimpsth*0.95, ...
-            'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ... 
+            'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
             'MarkerFaceColor', colorYellow, 'Color', colorYellow); % cue
         plot(reg_crm.time/1000, p_crm{iP}(varPosition(4)+1,:)*ylimpsth*0.90, ...
-            'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ... 
+            'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
             'MarkerFaceColor', colorRed, 'Color', colorRed); % reward
         plot(reg_crm.time/1000, p_crm{iP}(varPosition(5)+1,:)*ylimpsth*0.85, ...
-            'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ... 
+            'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
             'MarkerFaceColor', colorBlue, 'Color', colorBlue); % punishment
     end
     
@@ -304,44 +304,48 @@ for iFile = 1:nFile
     ylabel('Rate (Hz)', 'FontSize', fontS);
     
     % Psth 2 (Cue x Mod)
-    hMain(3) = axes('Position',axpt(1,3,1,2,axpt(nCol,nRowMain,2:3,[3 7],[],wideInterval),wideInterval));
-    hold on;
-    ylimpsth = ceil(max(psthconvCue(:))*1.1+0.0001);
-    for iDur = 2:4
-        plot([eventDuration(iDur) eventDuration(iDur)],[0.01 nTrial], ...
-            'LineStyle',':', 'LineWidth', lineM, 'Color', colorGray);
-    end
-    
-    pMod_crm = cell(1, 3);
-    for iP = 1:3
-        plot(reg_crm.time/1000, p_crm{iP}(varPosition(3)+1,:)*ylimpsth*0.95, ...
-            'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
-            'MarkerFaceColor', colorYellow, 'Color', colorYellow);
-        pMod_crm{iP} = double(reg_crm.pMod < pthreshold(iP) & reg_crm.pMod >= pthreshold(iP+1)); pMod_crm{iP}(pMod_crm{iP}==0) = NaN;
-        for iMod = 2:nMod
-            plot(reg_crm.time/1000, p_crm{iP}(varPosition(3)+iMod,:)*ylimpsth*(1-iMod*0.05), ...
+    for iMod = 1:nMod-1
+        hMain(2+iMod) = axes('Position',axpt(1,4,1,1+iMod,axpt(nCol,nRowMain,2:3,[3 7],[],wideInterval),wideInterval));
+        hold on;
+        ylimpsth = ceil(max(psthconvCue(:))*1.1+0.0001);
+        for iDur = 2:4
+            plot([eventDuration(iDur) eventDuration(iDur)],[0.01 nTrial], ...
+                'LineStyle',':', 'LineWidth', lineM, 'Color', colorGray);
+        end
+        
+        pMod_crm = cell(1, 2);
+        for iP = 1:3
+            % non-mod p value
+            plot(reg_crm.time/1000, p_crm{iP}(varPosition(3)+1,:)*ylimpsth*0.95, ...
+                'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
+                'MarkerFaceColor', colorYellow, 'Color', colorYellow);
+            pMod_crm{iP} = double(reg_crm.pMod < pthreshold(iP) & reg_crm.pMod >= pthreshold(iP+1)); pMod_crm{iP}(pMod_crm{iP}==0) = NaN;
+            
+            % mod p value
+            plot(reg_crm.time/1000, p_crm{iP}(varPosition(3)+iMod+1,:)*ylimpsth*0.90, ...
                 'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
                 'MarkerFaceColor', colorLightYellow, 'Color', colorLightYellow);
-            plot(reg_crm.time/1000, p_crm{iP}(varPosition(2)+iMod-1, :)*ylimpsth*0.05, ...
+            plot(reg_crm.time/1000, p_crm{iP}(varPosition(2)+iMod, :)*ylimpsth*0.05, ...
                 'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
                 'MarkerFaceColor', colorGray, 'Color', colorGray);
-            plot(reg_crm.time/1000, squeeze(pMod_crm{iP}(1, iMod-1, :))*ylimpsth*(0.05*iMod), ...
+            plot(reg_crm.time/1000, squeeze(pMod_crm{iP}(1, iMod, :))*ylimpsth*0.10, ...
                 'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
                 'MarkerFaceColor', colorDarkGray, 'Color', colorDarkGray);
         end
+        
+        for jType = find(cueResult~=0 & repmat((1:nMod)==1 | (1:nMod)==(iMod+1), 1, 4))
+            fill([psthtime flip(psthtime)], psthsemCue(jType, :), lineClr{ceil(jType/nMod)*2-1, mod(jType-1, nMod)+1}, ...
+                'LineStyle', 'none', 'FaceAlpha', transparency);
+            plot(psthtime, psthconvCue(jType,:), ...
+                'LineStyle', lineStl{ceil(jType/nMod)*2-1, mod(jType-1, nMod)+1}, ...
+                'LineWidth', lineWth(ceil(jType/nMod)*2-1, mod(jType-1, nMod)+1), ...
+                'Color', lineClr{ceil(jType/nMod)*2-1, mod(jType-1, nMod)+1});
+        end
+        set(hMain(2+iMod), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
+        title(['Cue x Mod = ',num2str(iMod)], 'FontSize', fontM);
+%         xlabel('Time (s)', 'FontSize', fontS);
+        ylabel('Rate (Hz)', 'FontSize', fontS);   
     end
-    for jType = find(cueResult~=0)
-        fill([psthtime flip(psthtime)], psthsemCue(jType, :), lineClr{ceil(jType/nMod)*2-1, mod(jType-1, nMod)+1}, ...
-            'LineStyle', 'none', 'FaceAlpha', transparency);
-        plot(psthtime, psthconvCue(jType,:), ...
-            'LineStyle', lineStl{ceil(jType/nMod)*2-1, mod(jType-1, nMod)+1}, ...
-            'LineWidth', lineWth(ceil(jType/nMod)*2-1, mod(jType-1, nMod)+1), ...
-            'Color', lineClr{ceil(jType/nMod)*2-1, mod(jType-1, nMod)+1});
-    end
-    set(hMain(3), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
-    title('Cue x Mod', 'FontSize', fontM);
-    xlabel('Time (s)', 'FontSize', fontS);
-    ylabel('Rate (Hz)', 'FontSize', fontS);
     
     set(hMain, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS, ...
         'XLim', eventDuration([1 end]), 'XTick', eventDuration([1:4 end]));
@@ -364,9 +368,9 @@ for iFile = 1:nFile
     set(hTrial, 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS, ...
         'XLim', [0 nTrial], 'XTick', 0:100:nTrial, ...
         'YLim', [0 yMaxTrial], 'YTick', [0 yMaxTrial]);
-
+    
     align_ylabel([hMain hTrial]);
-  
+    
     
     %% Reward aligned
     % Reward raster
@@ -383,55 +387,57 @@ for iFile = 1:nFile
     % PsthRw 2-3 (Rw x Mod | Cue)
     cues = unique(cue);
     nCue = length(cues);
-    for iCue = 1:nCue
-        hRw(iCue+1) = axes('Position',axpt(1,3,1,iCue,axpt(nCol,nRowMain,4,[3 7],[],wideInterval),wideInterval));
-        hold on;
-        ylimpsth = ceil(max(psthconvRw(:))*1.1+0.0001);
-        plot([0 0], [0.01 nTrial], ...
-            'LineStyle',':', 'LineWidth',lineM, 'Color', colorGray);
-        
-        [pRw_crm, pRwMod_crm] = deal(cell(1, 3));
-        for iP = 1:3
-            pRw_crm{iP} = double(regRw_crm.p < pthreshold(iP) & regRw_crm.p >= pthreshold(iP+1)); pRw_crm{iP}(pRw_crm{iP}==0) = NaN;
-            pRwMod_crm{iP} = double(regRw_crm.pMod < pthreshold(iP) & regRw_crm.pMod >= pthreshold(iP+1)); pRwMod_crm{iP}(pRwMod_crm{iP}==0) = NaN;
+    for iMod = 1:nMod-1
+        for iCue = 1:nCue
+            hRw((iCue-1)*(nMod-1)+iMod+1) = axes('Position',axpt(1,4,1,(iCue-1)*(nMod-1)+iMod,axpt(nCol,nRowMain,4,[3 7],[],wideInterval),wideInterval));
+            hold on;
+            ylimpsth = ceil(max(psthconvRw(:))*1.1+0.0001);
+            plot([0 0], [0.01 nTrial], ...
+                'LineStyle',':', 'LineWidth',lineM, 'Color', colorGray);
             
-            plot(regRw_crm.time/1000, pRw_crm{iP}(varPosition(3+iCue)+1,:)*ylimpsth*0.95, ...
-                'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
-                'MarkerFaceColor', lineClr{(cues(iCue)-1)*2+1, 1}, 'Color', lineClr{(cues(iCue)-1)*2+1, 1});
-            for iMod = 2:nMod
-                plot(regRw_crm.time/1000, pRw_crm{iP}(varPosition(3+iCue)+iMod,:)*ylimpsth*(1-iMod*0.05), ...
+            [pRw_crm, pRwMod_crm] = deal(cell(1, 3));
+            for iP = 1:3
+                pRw_crm{iP} = double(regRw_crm.p < pthreshold(iP) & regRw_crm.p >= pthreshold(iP+1)); pRw_crm{iP}(pRw_crm{iP}==0) = NaN;
+                pRwMod_crm{iP} = double(regRw_crm.pMod < pthreshold(iP) & regRw_crm.pMod >= pthreshold(iP+1)); pRwMod_crm{iP}(pRwMod_crm{iP}==0) = NaN;
+                
+                plot(regRw_crm.time/1000, pRw_crm{iP}(varPosition(3+iCue)+1,:)*ylimpsth*0.95, ...
+                    'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
+                    'MarkerFaceColor', lineClr{(cues(iCue)-1)*2+1, 1}, 'Color', lineClr{(cues(iCue)-1)*2+1, 1});
+                
+                plot(regRw_crm.time/1000, pRw_crm{iP}(varPosition(3+iCue)+iMod+1,:)*ylimpsth*0.90, ...
                     'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
                     'MarkerFaceColor', lineClr{(cues(iCue)-1)*2+1, 2}, 'Color', lineClr{(cues(iCue)-1)*2+1, 2});
-                plot(regRw_crm.time/1000, pRw_crm{iP}(varPosition(2)+iMod-1, :)*ylimpsth*0.05, ...
+                plot(regRw_crm.time/1000, pRw_crm{iP}(varPosition(2)+iMod, :)*ylimpsth*0.05, ...
                     'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
                     'MarkerFaceColor', colorGray, 'Color', colorGray);
-                plot(regRw_crm.time/1000, squeeze(pRwMod_crm{iP}(1+iCue, iMod-1, :))*ylimpsth*(0.05*iMod), ...
+                plot(regRw_crm.time/1000, squeeze(pRwMod_crm{iP}(1+iCue, iMod, :))*ylimpsth*0.10, ...
                     'LineStyle', 'none', 'Marker', pMarker{iP}, 'MarkerSize', markerM, ...
                     'MarkerFaceColor', colorDarkGray, 'Color', colorDarkGray);
             end
-        end
-        
-        for jType = 4*(cues(iCue)-1)+(1:(2*nMod))
-            if trialResult(jType)~=0
-                fill([psthtimeRw flip(psthtimeRw)], psthsemRw(jType, :), lineClr{ceil(jType/nMod), mod(jType-1, nMod)+1}, ...
-                    'LineStyle', 'none', 'FaceAlpha', transparency);
-                plot(psthtimeRw, psthconvRw(jType,:), ...
-                    'LineStyle', lineStl{ceil(jType/nMod), mod(jType-1, nMod)+1}, ...
-                    'LineWidth', lineWth(ceil(jType/nMod), mod(jType-1, nMod)+1), ...
-                    'Color', lineClr{ceil(jType/nMod), mod(jType-1, nMod)+1});
+            
+            selectPlot = 2*nMod*(cues(iCue)-1)+(1:(2*nMod))
+            for jType = selectPlot(repmat((1:nMod)==1 | (1:nMod)==(iMod+1), 1, 2))
+                if trialResult(jType)~=0
+                    fill([psthtimeRw flip(psthtimeRw)], psthsemRw(jType, :), lineClr{ceil(jType/nMod), mod(jType-1, nMod)+1}, ...
+                        'LineStyle', 'none', 'FaceAlpha', transparency);
+                    plot(psthtimeRw, psthconvRw(jType,:), ...
+                        'LineStyle', lineStl{ceil(jType/nMod), mod(jType-1, nMod)+1}, ...
+                        'LineWidth', lineWth(ceil(jType/nMod), mod(jType-1, nMod)+1), ...
+                        'Color', lineClr{ceil(jType/nMod), mod(jType-1, nMod)+1});
+                end
             end
-        end
-        set(hRw(iCue+1), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
-        title(['Rw x Mod | Cue=',cueName{iCue}], 'FontSize', fontM);
-        ylabel('Rate (Hz)', 'FontSize', fontS);
-        if iCue==nCue
-            xlabel('Time from reward onset (s)', 'FontSize', fontS);
+            set(hRw((iCue-1)*(nMod-1)+iMod+1), 'YLim', [0 ylimpsth], 'YTick', [0 ylimpsth], 'YTickLabel', {[], ylimpsth});
+            title(['Rw x Mod = ', num2str(iMod+1), ' | Cue=',cueName{iCue}], 'FontSize', fontM);
+            ylabel('Rate (Hz)', 'FontSize', fontS);
+%             if iCue==nCue & iMod==nMod-1
+%                 xlabel('Time from reward onset (s)', 'FontSize', fontS);
+%             end
         end
     end
     set(hRw, 'Box', 'off', 'TickDir', 'out', 'LineWidth', lineS, 'FontSize', fontS, ...
         'XLim', [winRw(1)/1000+1 winRw(2)/1000-1], 'XTick', [winRw(1)/1000+1 0 winRw(2)/1000-1]);
     align_ylabel(hRw(1:end))
-
+    
     print(gcf,'-dtiff','-r300',[cellFigName{1},'.tif']);
     close;
 end
