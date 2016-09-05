@@ -92,9 +92,11 @@ for iMod = 1:nMod-1
         varIndex{iMod, iType} = 1:nMod-1;
         for jType = 1:3
             if iType~=jType
-                varIndex{iMod, iType} = [varIndex{iMod, iType} varCum(jType+1)+[1 iMod+1]];
+                varIndex{iMod, iType} = [varIndex{iMod, iType} varCum(jType+1)+(1:nMod)];
             else
-                varIndex{iMod, iType} = [varIndex{iMod, iType} varCum(jType+4)+1];
+                varIndexTemp = varCum(jType+1) + (2:nMod);
+                varIndexTemp(iMod) = [];
+                varIndex{iMod, iType} = [varIndex{iMod, iType} [varCum(jType+4)+iMod, varIndexTemp]];
             end
         end
     end
