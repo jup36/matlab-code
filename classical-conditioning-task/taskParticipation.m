@@ -2,23 +2,11 @@ function taskParticipation(sessionFolder)
 %psthplotCC licking rate and cell firing rate trend analysis
 % find out where there's resting state
 
-lineClrMod = {[0.8 0 0], ... % Cue A, Rw, no mod
-    [1 0.6 0.6], ... % Cue A, Rw, mod
-    [0.8 0 0], ... % Cue A, no Rw, no mod
-    [1 0.6 0.6], ... % Cue A, no Rw, mod
-    [153 204 0]./255, ... % Cue B, Rw, no mod
-    [204 255 102]./255, ... % Cue B, Rw, mod
-    [153 204 0]./255, ... % Cue B, no Rw, no mod
-    [204 255 102]./255, ... % Cue B, no Rw, mod
-    [1 0.6 0], ... % Cue C
-    [1 0.8 0.4], ...
-    [1 0.6 0], ...
-    [1 0.8 0.4], ...
-    [0 0 0.8], ... % Cue D
-    [0.6 0.6 1], ...
-    [0 0 0.8], ...
-    [0.6 0.6 1]};
-markerMod = {'o','v','s','^','o','v','s','^'};
+lineClrMod = {[0.8 0 0], [1 0.4 0.4], [1 0.6 0.6], ... % Cue A, Rw, (no mod / mod A / mod B)
+    [153 204 0]./255, [204 255 102]./255, [204 255 102]./255,... % Cue B, Rw, (no mod / mod A / mod B)
+    [1 0.6 0], [1 0.8 0.4], [1 0.8 0.4], ... % Cue C
+    [0 0 0.8], [0.4 0.4 1], [0.6 0.6 1]};
+markerMod = repmat({'o','v','v','s','^', '^'}, 1, 2);
 lineS = 0.2;
 lineL = 0.5;
 colorGray = [204 204 204] ./ 255;
@@ -111,9 +99,10 @@ for iFile = 1:nFile
     axes('Position',axpt(2,ceil((nCell+2)/2),2,1));
     hold on;
     for jCue = 1:nCue
+        if cueResult(jCue)==0; continue; end;
         plot(lickCue{jCue,1},lickCue{jCue,2}, ...
             'Marker', markerMod{jCue}, 'MarkerSize', 2.2, ...
-            'LineWidth', lineL, 'Color', lineClrMod{floor((jCue-1)/2)*4+mod(jCue-1,2)+1});
+            'LineWidth', lineL, 'Color', lineClrMod{jCue});
     end
     set(gca, 'Box', 'off', 'TickDir', 'out', 'LineWidth', 0.2, 'FontSize', 4);
     title('Lick rate by cue', 'FontSize', 4);

@@ -35,14 +35,10 @@ colorLightBlue = [223 239 252] ./ 255;
 colorRed = [237 50 52] ./ 255;
 colorLightRed = [242 138 130] ./ 255;
 colorGray = [204 204 204] ./ 255;
-lineClr = {[0.8 0 0], ... % Cue A, Rw, no mod
-    [1 0.6 0.6], ... % Cue A, Rw, mod
-    [153 204 0]./255, ... % Cue B, Rw, no mod
-    [204 255 102]./255, ... % Cue B, Rw, mod
-    [1 0.6 0], ... % Cue C
-    [1 0.8 0.4], ...
-    [0 0 0.8], ... % Cue D
-    [0.6 0.6 1]};
+lineClr = {[0.8 0 0], [1 0.4 0.4], [1 0.6 0.6], ... % Cue A, Rw, (no mod / mod A / mod B)
+    [153 204 0]./255, [204 255 102]./255, [204 255 102]./255,... % Cue B, Rw, (no mod / mod A / mod B)
+    [1 0.6 0], [1 0.8 0.4], [1 0.8 0.4], ... % Cue C
+    [0 0 0.8], [0.4 0.4 1], [0.6 0.6 1]};
 
 binSize = 10; % ms
 resolution = 10; % sigma = resolution * binSize = 100ms 

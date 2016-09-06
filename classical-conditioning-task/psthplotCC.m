@@ -292,7 +292,7 @@ for iFile = 1:nFile
     end
     
     for jType = find(trialResult~=0)
-        if mod(jType,2)==1
+        if mod(jType,nMod)==1
             fill([psthtime flip(psthtime)], psthsem(jType, :), lineClr{ceil(jType/nMod), mod(jType-1, nMod)+1}, ...
                 'LineStyle', 'none', 'FaceAlpha', transparency);
             plot(psthtime, psthconv(jType,:), ...
