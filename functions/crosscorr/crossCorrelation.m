@@ -12,4 +12,4 @@ for iT = 1:nT
     C = C + histc(t2, t1(iT)+B);
 end
 
-C = C / (binSize * nT);
+% C = C / (binSize * nT);

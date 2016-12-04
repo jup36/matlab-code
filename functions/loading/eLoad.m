@@ -26,7 +26,9 @@ elseif nargin >= 1
         nFolder = length(eFile);
         eList = cell(0,1);
         for iFolder = 1:nFolder
-            if exist(eFile{iFolder},'file')
+            if exist(eFile{iFolder},'dir')
+                eList = [eList;FindFiles('Events.nev','StartingDirectory',eFile{iFolder},'CheckSubdirs',1)];
+            elseif exist(eFile{iFolder},'file')
                 eList = [eList;FindFiles('Events.nev','StartingDirectory',fileparts(eFile{iFolder}),'CheckSubdirs',1)];
             end
         end

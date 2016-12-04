@@ -124,11 +124,12 @@ void mexFunction(int nOUT, mxArray *pOUT[], int nINP, const mxArray *pINP[])
                     k++;
                 }
                 
-                C[j*niter + iiter] += k;
+                C[j + nbins*iiter] += k;
             }
         }
-        
-        for(j = 0; j < nbins; j++)
-           C[j*niter + iiter] /= nt1 * binsize;
+
+        // normalization excluded (Dohoung, Dec. 2, 2016)
+        /* for(j = 0; j < nbins; j++)
+           C[j*niter + iiter] /= nt1 * binsize; */
    }
 }

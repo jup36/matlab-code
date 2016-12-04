@@ -116,7 +116,8 @@ void mexFunction(
             C[j] += k;
         }
     }
-    
-    for(j = 0; j < nbins; j++)
-        C[j] /= nt1 * binsize;
+
+// normalization excluded (Dohoung, Dec. 2, 2016)
+/*    for(j = 0; j < nbins; j++)
+        C[j] /= nt1 * binsize; */
 }

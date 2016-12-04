@@ -36,7 +36,7 @@ for iGroup = 1:nGroup
     h(iGroup).errorbar = errorbar(iGroup,yMean,ySem,'LineWidth',2,'Color',xColor{iGroup});
     errorbarT(h(iGroup).errorbar, 0.2, 0.5);
     
-    plot(xPoint,yPoint,'LineStyle','none','Marker','.','MarkerSize',6,'Color',xColor{iGroup});
+    plot(xPoint,yPoint,'LineStyle','none','Marker','.','MarkerSize',3,'Color',xColor{iGroup});
 end
 yMax = max(yMax);
 yMin = min(yMin);
