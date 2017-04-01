@@ -5,16 +5,15 @@ renameFiles = strcmp(backuplist(:, 3), 'Rename old file');
 sourcePaths = backuplist(:, 4);
 targetPaths = backuplist(:, 5);
 
-
 for iS = 1:nS
     extension = strsplit(backuplist{iS, 6}, {',',';'});
     nExt = length(extension);
     
     for iE = 1:nExt
         if ~isempty(extension{iE})
-            copyFiles(sourcePaths{iS}, targetPaths{iS},  extension{iE}, renameFiles(iS));
+            copyFiles(sourcePaths{iS}, targetPaths{iS},  extension{iE}, renameFiles(iS), sync(iS));
             if sync(iS)
-                copyFiles(targetPaths{iS}, sourcePaths{iS}, extension{iE}, renameFiles(iS));
+                copyFiles(targetPaths{iS}, sourcePaths{iS}, extension{iE}, renameFiles(iS), sync(iS)+1);
             end
         end
     end
@@ -63,8 +62,9 @@ fileList = fileList(extensionIndex);
 fileTime = fileTime(extensionIndex);
 
 
-function copyFiles(sourcePath, targetPath, extension, renameFiles)
+function copyFiles(sourcePath, targetPath, extension, renameFiles, sync)
 
+stopCopy = false;
 [sourceFileList, sourceFileTime] = fileFinder(sourcePath, extension);
 [targetFileList, targetFileTime] = fileFinder(targetPath, extension);
 nFile = length(sourceFileList);
@@ -79,7 +79,15 @@ isNewFile = sourceFileTime(overlapSourceIndex) - targetFileTime(overlapSourceLoc
 copyIndex(overlapSourceIndex) = isNewFile*2;
 
 overwrite = 'No';
+hWait = waitbar(0, 'Start copying...', 'Name', 'Copying...');
 for iFile = 1:nFile
+    if sync==0
+        waitbar(iFile/nFile, hWait, [num2str(iFile),' / ',num2str(nFile),' files copied.']);
+    elseif sync==1
+        waitbar(iFile/nFile/2, hWait, [num2str(iFile),' / ',num2str(nFile),' files copied.']);
+    elseif sync==2
+        waitbar((iFile+nFile)/nFile/2, hWait, [num2str(iFile),' / ',num2str(nFile),' files copied.']);
+    end
     if copyIndex(iFile)==1
         targetDir = fileparts(newTargetFileList{iFile});
         if ~exist(targetDir, 'dir')
@@ -106,3 +114,4 @@ for iFile = 1:nFile
         end
     end
 end
+delete(hWait);
