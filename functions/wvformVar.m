@@ -1,4 +1,4 @@
-function wvform(fdorfile)
+function waveform = wvformVar(fdorfile)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Object: Waveform을 읽어서 분석한다.
 % Author: Dohoung Kim
@@ -45,6 +45,7 @@ switch nargin
 end
 nfile = length(ttfile);
 
+waveform = struct;
 for ifile = 1:nfile
     [cellcd,cellname,~] = fileparts(ttfile{ifile});
     ttname = strsplit(cellname,'_');
@@ -93,12 +94,8 @@ for ifile = 1:nfile
         hfvwth = 1000*(vlidx-hfvl1)*2/32;
     end
     
-    if exist([cellname,'.mat'], 'file')==0
-        save([cellname,'.mat'],...
-            'spkwv','spkwth','spkpvr','hfvwth');
-    else
-        save([cellname,'.mat'],...
-            'spkwv','spkwth','spkpvr','hfvwth',...
-            '-append');
-    end
+    waveform(ifile).spkwv = spkwv;
+    waveform(ifile).spkwth = spkwth;
+    waveform(ifile).spkpvr = spkpvr;
+    waveform(ifile).hfvwth = hfvwth;
 end
