@@ -9,7 +9,7 @@ function [xpt,ypt,spikeBin,spikeHist,spikeConv,spikeConvZ, spikeSEM] = rasterPST
 %   unit of xpt will be msec.
 narginchk(5, 6);
 if isempty(spikeTime) || isempty(trialIndex) || length(spikeTime) ~= size(trialIndex,1) || length(win) ~= 2
-    xpt = []; ypt = []; spikeBin = []; spikeHist = []; spikeConv = []; spikeConvZ = [];
+    xpt = cell(1); ypt = cell(1); spikeBin = []; spikeHist = []; spikeConv = []; spikeConvZ = []; spikeSEM = [];
     return;
 end;
 

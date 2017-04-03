@@ -1,14 +1,12 @@
 function waveform = wvformVar(fdorfile)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Object: Waveform을 읽어서 분석한다.
+% Object: Waveform
 % Author: Dohoung Kim
 % First written: 2014/09/19
 % Last revision: 2015/01/03
 % Ver 2.0 (2015/01/03)
-%   Function 실행이 용이하게 변경
-%   Firing rate는 psth.m으로 이동
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Function Input 확인
+%% Function Input
 switch nargin
     case 0
         ttfile = FindFiles('T*.t','CheckSubdirs',0);
@@ -31,8 +29,7 @@ switch nargin
             ttfile = cell(0,1);
             for ifolder = 1:nfolder
                 if exist(fdorfile{ifolder})==7
-                    cd(fdorfile{ifolder});
-                    ttfile = [ttfile;FindFiles('T*.t','CheckSubdirs',1)];
+                    ttfile = [ttfile;FindFiles('T*.t','CheckSubdirs',1, 'StartingDirectory', fdorfile{ifolder})];
                 elseif strcmp(fdorfile{ifolder}(end-1:end),'.t');
                     ttfile = [ttfile;fdorfile{ifolder}];
                 end
@@ -50,10 +47,9 @@ for ifile = 1:nfile
     [cellcd,cellname,~] = fileparts(ttfile{ifile});
     ttname = strsplit(cellname,'_');
     if ttname{1}(1)~='T'; ttname{1} = ttname{1}(4:6); end;
-    cd(cellcd);
     
     %% Input range
-    nttfile = fopen([ttname{1},'.ntt']);
+    nttfile = fopen(fullfile(cellcd,[ttname{1},'.ntt']));
     
     volts = fgetl(nttfile);
     while ~strncmp(volts,'-ADBitVolts',11)
@@ -66,9 +62,9 @@ for ifile = 1:nfile
     end
     
     %% Waveform
-    load([ttname{1},'.clusters'],'-mat','MClust_Clusters');
+    load(fullfile(cellcd,[ttname{1},'.clusters']),'-mat','MClust_Clusters');
     spk_idx = FindInCluster(MClust_Clusters{str2num(ttname{2})});
-    [~,wv] = LoadTT_NeuralynxNT([ttname{1},'.ntt']);
+    [~,wv] = LoadTT_NeuralynxNT(fullfile(cellcd,[ttname{1},'.ntt']));
     cellwv = wv(spk_idx,:,:);
     spkwv = zeros(4,32);
     for itt = 1:4
