@@ -1,0 +1,141 @@
+function fLoad(dn)
+startingDir = pwd;
+if nargin == 0
+    startDir = 'C:\CheetahData\';
+    dn = uigetdir(startDir, 'Select session to calculate features');
+end
+
+featuresToUse = {'Energy'; 'Peak'; 'Time'; 'Valley'; 'WavePC1'};
+
+TTfile = FindFiles('*.ntt', 'StartingDirectory', dn);
+nTT = length(TTfile);
+
+for iTT = 1:nTT
+    [TTdn, TTfn] = fileparts(TTfile{iTT});
+    CalculateFeaturesForAllNTT(TTdn, TTfn, featuresToUse);
+end
+
+disp('===== Done!!! =====');
+cd(startingDir);
+
+function ok = CalculateFeaturesForAllNTT(MClust_FDdn, basename, featureList)
+
+% CalculateFeatures(basename, featureList)
+%
+% Goes through featureList and makes sure features are calculated for
+% electrode file basename.
+%
+% Recalculates them if necessary
+%
+% ADR 2007
+% Version M3.5.
+% Released with MClust 3.5.
+
+% Modified to store feature data in global variable to avoid reloading from
+% disc when plotting. (B. Hangya, CSHL; balazs.cshl@gmail.com)
+
+% PARAMETERS
+
+MClust_FDext = '.fd';
+MClust_ChannelValidity = [1, 1, 1, 1];
+MCLUST_DEBUG = 1;
+MClust_max_records_to_load = 10000;
+MClust_TTdn = MClust_FDdn;
+MClust_TTfn = basename;
+MClust_TText = '.ntt';
+MClust_FeatureTimestamps = [];
+
+MClust_FeatureNames = {}; % names of features
+MClust_FeatureSources = {}; % <filenames, number pairs> for finding features in fd files
+MClust_FeatureData = {};
+
+if ~isempty(MClust_max_records_to_load)
+	record_block_size = MClust_max_records_to_load;
+else
+	record_block_size = 50000;  % maximum number of spikes to load into memory at one time
+end
+
+template_matching = 0; % used to remove noise spikes which are not "spike-like,", template-matching is not a currently supported function
+
+NormalizeFDYN = 'no'; % 'yes' if you want to normalize the feature data files to mean = 0, std = 1
+
+if isempty(featureList)
+	error('MClust:InternalError', 'Empty feature list sent to CalculateFeatures.');
+end
+
+% GO
+
+featureFiles = cell(size(featureList));
+for iF = 1:length(featureList)
+	featureFiles{iF} = fullfile(MClust_FDdn, [basename '_' featureList{iF}]);
+end
+
+if MCLUST_DEBUG	
+	disp(sprintf('Calculating features...'));
+	disp(sprintf('ChannelValidity: [%d %d %d %d]', MClust_ChannelValidity));
+	for iF = 1:length(featureFiles)
+		[p n] = fileparts(featureFiles{iF});
+		disp(sprintf('..%s', n));
+	end
+end
+
+Write_fd_file(MClust_FDdn, [MClust_TTdn filesep MClust_TTfn MClust_TText], ...
+	featureList, MClust_ChannelValidity, record_block_size, template_matching, NormalizeFDYN)
+
+% Load features 
+
+% Check FD channel validity match
+ok = true(size(featureFiles)); temp = cell(size(featureFiles));
+lfF = length(featureFiles);
+Temp = cell(lfF,1);
+for iF = 1:lfF
+   Temp{iF} = load([featureFiles{iF} MClust_FDext],'-mat');
+   ok(iF) = all(MClust_ChannelValidity == Temp{iF}.ChannelValidity);
+end
+if any(~ok)
+	errordlg({'Channel Validity in feature files'; ...
+		      'do not match user-defined Channel Validity.'; ...
+			  'Delete problematic feature data files and recalculate them.'},...
+		'MClust error', 'modal');
+	disp(sprintf('User channel validity: [%d %d %d %d]', MClust_ChannelValidity));
+	for iF = 1:length(featureFiles)
+		disp(sprintf('%s: [%d %d %d %d]', featureFiles{iF}, temp{iF}.ChannelValidity));
+	end
+end
+
+% Calculate features into memory
+
+% count features
+nFeat = zeros(size(featureList));
+nSamps = zeros(size(featureList));
+for iF = 1:length(featureList)
+	 temp = Temp{iF};
+	 nFeat(iF) = length(temp.FeatureNames);
+	 nSamps(iF) = length(temp.FeatureIndex);
+end
+if length(unique(nSamps)) > 1
+    error('MClust:Error', {'Number of samples in FeatureData files do not match.','Delete feature data files and recompute.'});
+end
+
+nFeat = sum(nFeat);
+
+% get times
+temp = load([featureFiles{1} MClust_FDext], '-mat', 'FeatureTimestamps');
+MClust_FeatureTimestamps = temp.FeatureTimestamps;
+
+% allocate
+MClust_FeatureNames = cell(nFeat,1);
+MClust_FeatureSources = cell(nFeat,2);
+MClust_FeatureData = cell(nFeat,1);
+iC = 1; 
+for iF = 1:length(featureList)
+    fn = [featureFiles{iF} MClust_FDext];
+    temp = load(fn,'-mat', 'FeatureNames');
+    for iN = 1:length(temp.FeatureNames)
+        MClust_FeatureNames{iC} = temp.FeatureNames{iN};
+        MClust_FeatureSources{iC,1} = fn;
+        MClust_FeatureSources{iC,2} = iN;
+        MClust_FeatureData{iC,1} = Temp{iF}.FeatureData(:,iN);     % get feature data
+        iC = iC+1;
+	end
+end
