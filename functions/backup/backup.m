@@ -57,17 +57,20 @@ handles.output = hObject;
 
 handles.selectedName=0;
 
-if exist('backupConfiguration.mat')==2
-    load('backupConfiguration.mat');
+handles.configfile = fullfile(fileparts(mfilename('fullpath')),'backupConfiguration.mat');
+
+
+if exist(handles.configfile)==2
+    load(handles.configfile);
     if exist('backuplist','var')==0; backuplist = {}; end;
     if exist('startingSourceFolder','var')==0; startingSourceFolder = pwd; end;
     if exist('startingTargetFolder','var')==0; startingTargetFolder = pwd; end;
-    save('backupConfiguration.mat', 'backuplist', 'startingSourceFolder', 'startingTargetFolder');
+    save(handles.configfile, 'backuplist', 'startingSourceFolder', 'startingTargetFolder');
 else
     backuplist = {};
     startingSourceFolder = pwd;
     startingTargetFolder = pwd;
-    save('backupConfiguration.mat', 'backuplist', 'startingSourceFolder', 'startingTargetFolder');
+    save(handles.configfile, 'backuplist', 'startingSourceFolder', 'startingTargetFolder');
 end
 set(handles.table, 'Data', backuplist);
 set(handles.startingSource, 'String', startingSourceFolder);
@@ -122,7 +125,7 @@ function close_Callback(hObject, eventdata, handles)
 backuplist = get(handles.table, 'Data');
 startingSourceFolder = get(handles.startingSource, 'String');
 startingTargetFolder = get(handles.startingTarget, 'String');
-save('backupConfiguration.mat', 'backuplist', 'startingSourceFolder', 'startingTargetFolder');
+save(handles.configfile, 'backuplist', 'startingSourceFolder', 'startingTargetFolder');
 close(backup);
 
 
@@ -134,7 +137,7 @@ function browseStartingSource_Callback(hObject, eventdata, handles)
 startingSourceFolder = get(handles.startingSource, 'String');
 startingSourceFolder = uigetdir(startingSourceFolder, 'Choose starting source folder');
 set(handles.startingSource, 'String', startingSourceFolder);
-save('backupConfiguration.mat', 'startingSourceFolder', '-append');
+save(handles.configfile, 'startingSourceFolder', '-append');
 
 % --- Executes on button press in browseStartingTarget.
 function browseStartingTarget_Callback(hObject, eventdata, handles)
@@ -144,7 +147,7 @@ function browseStartingTarget_Callback(hObject, eventdata, handles)
 startingTargetFolder = get(handles.startingTarget, 'String');
 startingTargetFolder = uigetdir(startingTargetFolder, 'Choose starting source folder');
 set(handles.startingTarget, 'String', startingTargetFolder);
-save('backupConfiguration.mat', 'startingTargetFolder', '-append');
+save(handles.configfile, 'startingTargetFolder', '-append');
 
 % --- Executes on button press in delete.
 function delete_Callback(hObject, eventdata, handles)
@@ -156,7 +159,7 @@ else
     backuplist = get(handles.table, 'Data');
     backuplist(handles.selectedName, :) = [];
     set(handles.table, 'Data', backuplist);
-    save('backupConfiguration.mat', 'backuplist', '-append');
+    save(handles.configfile, 'backuplist', '-append');
 end
 
 % --- Executes when selected cell(s) is changed in table.

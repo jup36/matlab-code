@@ -55,8 +55,10 @@ function addNew_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for addNew
 handles.output = hObject;
 
+handles.configfile = fullfile(fileparts(mfilename('fullpath')),'backupConfiguration.mat');
+
 if length(varargin)==1
-    load('backupConfiguration.mat', 'backuplist');
+    load(handles.configfile, 'backuplist');
     index = varargin{1}; 
     set(handles.name, 'String', backuplist{index,1});
         
@@ -163,7 +165,7 @@ function browseSource_Callback(hObject, eventdata, handles)
 % hObject    handle to browseSource (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-load('backupConfiguration.mat', 'startingSourceFolder');
+load(handles.configfile, 'startingSourceFolder');
 sourcePath = uigetdir(startingSourceFolder, 'Choose source folder');
 set(handles.sourcePath, 'String', sourcePath);
 
@@ -172,7 +174,7 @@ function browseTarget_Callback(hObject, eventdata, handles)
 % hObject    handle to browseTarget (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-load('backupConfiguration.mat', 'startingTargetFolder');
+load(handles.configfile, 'startingTargetFolder');
 targetPath = uigetdir(startingTargetFolder, 'Choose target folder.');
 set(handles.targetPath, 'String', targetPath);
 
@@ -181,7 +183,7 @@ function save_Callback(hObject, eventdata, handles)
 % hObject    handle to save (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-load('backupConfiguration.mat', 'backuplist');
+load(handles.configfile, 'backuplist');
 name = get(handles.name, 'String');
 directionTemp = cellstr(get(handles.direction, 'String'));
 direction = directionTemp{get(handles.direction, 'Value')};
@@ -202,14 +204,14 @@ else
             backuplist(duplicatedRow,:) = backupTemp;
             backupHandle = findall(0, 'tag', 'table'); 
             set(backupHandle, 'Data', backuplist);
-            save('backupConfiguration.mat', 'backuplist', '-append');
+            save(handles.configfile, 'backuplist', '-append');
             close(addNew);
         end
     else
         backuplist = [backuplist; backupTemp];
         backupHandle = findall(0, 'tag', 'table'); 
         set(backupHandle, 'Data', backuplist);
-        save('backupConfiguration.mat', 'backuplist', '-append');
+        save(handles.configfile, 'backuplist', '-append');
         close(addNew);
     end
 end
