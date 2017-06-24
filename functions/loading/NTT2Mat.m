@@ -1,32 +1,30 @@
-function [T, W, H, P] =  NTT2Mat(fNm)
+function [timeStamp, waveForm, header] =  NTT2Mat(fNm)
+% Performance: 20 sec for 200 megabyte file (LoadTT_NeuralynxNT: 0.9 sec)
 
-% fNm = 'D:\Cheetah_data\classical_conditioning\CC-SOM-ChR4\2016-03-31_AD_1.30DV\TT2.ntt';
 fID = fopen(fNm);
 
-H = {};
+header = cell(10, 1);
 for iL = 1:49
-    tline = fgetl(fID);
-    H = [H; tline];
+    header{iL} = fgetl(fID);
 end
+
+packetSize = 304; % (64+32+32+8*32+4*32*16)/8;
 fseek(fID, 0, 'eof');
 endPt = ftell(fID);
-nP = floor(endPt - 16*1024)/(8+4+4+4*8+2*32*4);
+nPacket = floor((endPt - 16*1024)/packetSize);
 
 fseek(fID, 16*1024, 'bof');
 
-T = uint64([]);
-S = uint32([]);
-C = uint32([]);
-P = uint32([]);
-W = int16(zeros(0,4,32));
+timeStamp = zeros(nPacket, 1, 'uint64');
+waveForm = zeros(nPacket,4,32, 'int16');
 
-% for iP = 1:nP
-for iP = 1:100
-    T = [T; fread(fID, 1, 'uint64')];
-    S = [S; fread(fID, 1, 'uint32')];
-    C = [C; fread(fID, 1, 'uint32')];
-    P = [P; fread(fID, [1, 8], 'uint32')];
-    W = [W; reshape(fread(fID, [4 32], 'int16'), 1, 4, 32)];
+for iP = 1:nPacket
+    timeStamp(iP) = fread(fID, 1, 'uint64');
+    fread(fID, [1 10], 'uint32');
+    waveForm(iP, :, :) = reshape(fread(fID, [4 32], 'int16'), 1, 4, 32);
 end
 
 fclose(fID);
+
+timeStamp = double(timeStamp)/10; % in ms
+waveForm = double(waveForm);

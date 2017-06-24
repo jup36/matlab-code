@@ -1,4 +1,4 @@
-function [eData eList] = eLoad(eFile)
+function [eData, eList] = eLoad(eFile)
 %eLoad loads Events.new files
 %
 %   eData(n).t: time stamp of event in milliseconds
@@ -36,16 +36,19 @@ elseif nargin >= 1
 end
 if isempty(eList)
     disp('Event file does not exist!');
+    eData = [];
+    eList = [];
     return;
 end
 
-eList = unique(eList);
+% eList = unique(eList);
 nE = length(eList);
 
 for iE = 1:nE
-    [timeStamp eventString] = Nlx2MatEV(eList{iE}, [1 0 0 0 1], 0, 1, []);
+    [timeStamp, ttl, eventString] = Nlx2MatEV(eList{iE}, [1 0 1 0 1], 0, 1, []);
     timeStamp = timeStamp'/1000;
     
     eData(iE).t = timeStamp;
     eData(iE).s = eventString;
+    eData(iE).ttl = ttl;
 end
