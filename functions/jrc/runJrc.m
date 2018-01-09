@@ -1,8 +1,11 @@
-function runJrc(binFile)
+function runJrc(binFileList)
 %RUNJRC Executes JRCLUST program
-%   RUNJRC(BINFILE) runs JRCLUST program. Makes parameter file
+%   RUNJRC(BINFILELIST) runs JRCLUST program. Makes parameter file
 %   (*.prm) using 'jrc makeprm'. Then, it executes spike sorting using 'jrc
 %   spikesort'. Finally, it starts manual clustering using  'jrc manual'.
+
+%   input variable 'binFileList' should be cell list that includes exact
+%   file names.
 
 %   Dohoung Kim
 %   Howard Hughes Medical Institute
@@ -14,21 +17,36 @@ function runJrc(binFile)
 % default data directory
 DATA_PATH = 'E:\';
 
-
-% make file list
-if nargin < 1
+%% 1. Check whether there's file in default directory. If not, pop up the window to select manually
+if nargin < 1 || isempty(binFilelist) || ~iscell(binFileList)
     binList = dir(fullfile(DATA_PATH,'*.ap.bin'));
-    nBin = length(binList);
     
+    if isempty(binList)
+        dataPath = uigetdir(DATA_PATH);
+        if ~ischar(dataPath); return; end
+        binList = dir(fullfile(dataPath,'*.ap.bin'));
+    else
+        dataPath = DATA_PATH;
+    end
+
+    nBin = length(binList);
     binFile = {};
     for iBin = 1:nBin
         if binList(iBin).bytes > 10^10
-            binFile = [binFile; {fullfile(DATA_PATH, binList(iBin).name)}];
+            binFile = [binFile; {fullfile(dataPath, binList(iBin).name)}];
+        end
+    end
+else
+    nBin = length(binFileList);
+    binFile = {};
+    for iBin = 1:nBin
+        if exist(binFileList{iBin}, 'file')
+            binFile = [binFile; binFileList{iBin}];
         end
     end
 end
 
-
+%% 2. Run JRC to make prm file and do spike sorting
 nBin = length(binFile);
 [prmFile, spkwavFile] = deal(cell(nBin, 1));
 for iBin = 1:nBin
@@ -46,6 +64,7 @@ for iBin = 1:nBin
     end
 end
 
+%% 3. After automated spike sorting, do manual spike sorting
 iFile = listdlg('PromptString', 'Select a file for manual clustering', ...
     'SelectionMode', 'single', ...
     'ListSize', [400, 200], ...
